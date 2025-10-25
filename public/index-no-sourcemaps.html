@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHL Media Manager</title>
+    
+    <!-- Bootstrap CSS (version sans source maps) -->
+    <link href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://unpkg.com/datatables.net-bs5@1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        .tag-badge {
+            margin: 2px;
+        }
+        .file-actions {
+            white-space: nowrap;
+        }
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 0.375rem;
+            padding: 3rem;
+            text-align: center;
+            transition: border-color 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+        .upload-area.drag-over {
+            border-color: #198754;
+            background-color: #d1e7dd;
+        }
+        .progress {
+            height: 1rem;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .modal-body .form-control {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                        MHL Media Manager
+                        <small class="text-muted">(Sans Source Maps)</small>
+                    </h1>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="fas fa-upload me-2"></i>
+                        Télécharger un fichier
+                    </button>
+                </div>
+
+                <!-- Alert for messages -->
+                <div id="alertContainer"></div>
+
+                <!-- Files table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Fichiers
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <table id="filesTable" class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nom du fichier</th>
+                                    <th>Taille</th>
+                                    <th>Date de modification</th>
+                                    <th>Tags</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">
+                        <i class="fas fa-upload me-2"></i>
+                        Télécharger un fichier PDF
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h5>Glissez-déposez votre fichier PDF ici</h5>
+                            <p class="text-muted">ou cliquez pour sélectionner un fichier</p>
+                            <input type="file" id="fileInput" accept=".pdf" class="d-none">
+                        </div>
+                        <div id="fileInfo" class="mt-3 d-none">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                <span id="fileName"></span>
+                                <small class="text-muted d-block">Taille: <span id="fileSize"></span></small>
+                            </div>
+                        </div>
+                        <div id="uploadProgress" class="mt-3 d-none">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="uploadBtn" disabled>
+                        <i class="fas fa-upload me-2"></i>
+                        Télécharger
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tags Modal -->
+    <div class="modal fade" id="tagsModal" tabindex="-1" aria-labelledby="tagsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tagsModalLabel">
+                        <i class="fas fa-tags me-2"></i>
+                        Gérer les tags
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Fichier:</label>
+                        <div id="currentFileName" class="fw-bold"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tags actuels:</label>
+                        <div id="currentTags"></div>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="newTagKey" class="form-label">Ajouter un nouveau tag:</label>
+                        <div class="row">
+                            <div class="col-5">
+                                <input type="text" class="form-control" id="newTagKey" placeholder="Clé">
+                            </div>
+                            <div class="col-5">
+                                <input type="text" class="form-control" id="newTagValue" placeholder="Valeur">
+                            </div>
+                            <div class="col-2">
+                                <button type="button" class="btn btn-success w-100" id="addTagBtn">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tagsContainer"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="saveTagsBtn">
+                        <i class="fas fa-save me-2"></i>
+                        Sauvegarder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="fas fa-trash text-danger me-2"></i>
+                        Confirmer la suppression
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Êtes-vous sûr de vouloir supprimer le fichier suivant ?</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-file-pdf me-2"></i>
+                        <span id="deleteFileName"></span>
+                    </div>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Cette action est irréversible.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-2"></i>
+                        Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <div>Chargement en cours...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery (version sans source maps) -->
+    <script src="https://unpkg.com/jquery@3.7.1/dist/jquery.min.js"></script>
+    <!-- Bootstrap JS (version sans source maps) -->
+    <script src="https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables JS avec fallback -->
+    <script>
+        // Fonction pour charger DataTables avec fallback
+        function loadDataTables() {
+            return new Promise((resolve, reject) => {
+                // Essayer de charger depuis unpkg (sans source maps)
+                const script1 = document.createElement('script');
+                script1.src = 'https://unpkg.com/datatables.net@1.13.8/js/jquery.dataTables.min.js';
+                script1.onload = function() {
+                    console.log('DataTables core chargé depuis unpkg');
+                    // Charger l'extension Bootstrap
+                    const script2 = document.createElement('script');
+                    script2.src = 'https://unpkg.com/datatables.net-bs5@1.13.8/js/dataTables.bootstrap5.min.js';
+                    script2.onload = function() {
+                        console.log('DataTables Bootstrap chargé depuis unpkg');
+                        resolve(true);
+                    };
+                    script2.onerror = function() {
+                        console.error('Erreur de chargement DataTables Bootstrap depuis unpkg');
+                        reject(false);
+                    };
+                    document.head.appendChild(script2);
+                };
+                script1.onerror = function() {
+                    console.error('Erreur de chargement DataTables depuis unpkg');
+                    reject(false);
+                };
+                document.head.appendChild(script1);
+            });
+        }
+
+        // Charger DataTables et initialiser l'application
+        $(document).ready(function() {
+            console.log('Document ready, chargement de DataTables...');
+            
+            loadDataTables()
+                .then(() => {
+                    console.log('DataTables chargé avec succès');
+                    if (typeof $.fn.DataTable !== 'undefined') {
+                        console.log('DataTables version:', $.fn.dataTable.version);
+                        // Initialiser l'application
+                        initializeApp();
+                    } else {
+                        throw new Error('DataTables non disponible après chargement');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Erreur lors du chargement de DataTables:', error);
+                    showErrorMessage('Erreur de chargement des composants. Certaines fonctionnalités peuvent être limitées.');
+                    // Initialiser l'application sans DataTables
+                    initializeAppWithoutDataTables();
+                });
+        });
+
+        function showErrorMessage(message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertElement = document.createElement('div');
+            alertElement.className = 'alert alert-warning alert-dismissible fade show';
+            alertElement.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            alertContainer.appendChild(alertElement);
+        }
+
+        function initializeApp() {
+            console.log('Initialisation de l\'application avec DataTables...');
+            try {
+                window.mediaManager = new MediaManager();
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation:', error);
+                showErrorMessage('Erreur lors de l\'initialisation de l\'application.');
+            }
+        }
+
+        function initializeAppWithoutDataTables() {
+            console.log('Initialisation de l\'application sans DataTables...');
+            showErrorMessage('Table basique utilisée - fonctionnalités de tri et recherche limitées.');
+            // On peut initialiser une version basique
+            try {
+                window.mediaManager = new MediaManagerBasic();
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation basique:', error);
+                showErrorMessage('Impossible d\'initialiser l\'application.');
+            }
+        }
+    </script>
+    
+    <!-- Custom JS -->
+    <script src="js/app.js"></script>
+</body>
+</html>

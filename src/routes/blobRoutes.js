@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
     res.json({
       success: true,
       count: blobs.length,
-      data: blobs
+      files: blobs
     });
   } catch (error) {
     console.error('Error in GET /api/blobs:', error);
