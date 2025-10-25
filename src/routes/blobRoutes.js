@@ -53,26 +53,14 @@ router.post('/', upload.single('file'), async (req, res) => {
 
     const { originalname, buffer, mimetype } = req.file;
     
-    // Generate unique filename if file already exists
-    let fileName = originalname;
-    const timestamp = Date.now();
-    const extension = path.extname(originalname);
-    const baseName = path.basename(originalname, extension);
-    
-    // Check if file already exists
-    try {
-      await azureBlobService.getBlobProperties(azureBlobService.getBlobPath(fileName));
-      // File exists, add timestamp
-      fileName = `${baseName}_${timestamp}${extension}`;
-    } catch (error) {
-      // File doesn't exist, use original name
-    }
+    // Utiliser le nom original du fichier (écrasement automatique)
+    const fileName = originalname;
 
     const uploadResult = await azureBlobService.uploadBlob(fileName, buffer, mimetype);
     
     res.status(201).json({
       success: true,
-      message: 'File uploaded successfully',
+      message: 'Fichier uploadé avec succès (écrasement automatique si existant)',
       data: uploadResult
     });
   } catch (error) {
