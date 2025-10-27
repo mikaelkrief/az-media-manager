@@ -5,7 +5,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  - group: AzWebAppManagerMHL
+  - group: AzWebMediaManagerMHL
 
 
 stages:
