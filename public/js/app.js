@@ -77,7 +77,7 @@ class MediaManager {
                         }
                     }
                 ],
-                dom: 'Bfrtip',
+                dom: 'Blfrtip',
                 buttons: [
                     {
                         extend: 'excelHtml5',
@@ -89,11 +89,12 @@ class MediaManager {
                         }
                     }
                 ],
+                lengthMenu: [[25, 50, 100, 200, -1], [25, 50, 100, 200, "Tous"]],
                 responsive: true,
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/fr-FR.json'
                 },
-                pageLength: 25,
+                pageLength: 200,
                 order: [[0, 'asc']]
             });
             
