@@ -92,7 +92,33 @@ class MediaManager {
                 lengthMenu: [[25, 50, 100, 200, -1], [25, 50, 100, 200, "Tous"]],
                 responsive: true,
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/fr-FR.json'
+                    "sEmptyTable": "Aucune donnée disponible dans le tableau",
+                    "sInfo": "Affichage de _START_ à _END_ sur _TOTAL_ entrées",
+                    "sInfoEmpty": "Affichage de 0 à 0 sur 0 entrée",
+                    "sInfoFiltered": "(filtré à partir de _MAX_ entrées au total)",
+                    "sInfoThousands": " ",
+                    "sLengthMenu": "Afficher _MENU_ entrées",
+                    "sLoadingRecords": "Chargement...",
+                    "sProcessing": "Traitement...",
+                    "sSearch": "Rechercher :",
+                    "sZeroRecords": "Aucune entrée correspondante trouvée",
+                    "oPaginate": {
+                        "sFirst": "Premier",
+                        "sLast": "Dernier",
+                        "sNext": "Suivant",
+                        "sPrevious": "Précédent"
+                    },
+                    "oAria": {
+                        "sSortAscending": ": activer pour trier la colonne par ordre croissant",
+                        "sSortDescending": ": activer pour trier la colonne par ordre décroissant"
+                    },
+                    "select": {
+                        "rows": {
+                            "_": "%d lignes sélectionnées",
+                            "0": "Aucune ligne sélectionnée",
+                            "1": "1 ligne sélectionnée"
+                        }
+                    }
                 },
                 pageLength: 200,
                 order: [[0, 'asc']]
