@@ -29,23 +29,33 @@ class MediaManager {
                         data: 'name', 
                         title: 'Nom du fichier',
                         render: function(data, type, row) {
-                            // Retirer le préfixe pdf/ pour tous les types d'affichage
-                            const cleanName = data.replace(/^pdf\//, '');
-                            
-                            // Pour l'export, retourner juste le nom propre
+                            var cleanName = data.replace(/^pdf\//, '');
                             if (type === 'export') {
                                 return cleanName;
                             }
-                            // Pour l'affichage, ajouter l'icône
-                            return `<i class="fas fa-file-pdf text-danger me-2"></i>${cleanName}`;
+                            return '<i class="fas fa-file-pdf text-danger me-2"></i>' + cleanName;
+                        }
+                    },
+                    { 
+                        data: 'lastModified', 
+                        title: 'Dernière modification',
+                        render: function(data, type, row) {
+                            if (!data) return '-';
+                            var date = new Date(data);
+                            if (type === 'export') {
+                                return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR');
+                            }
+                            var dateStr = date.toLocaleDateString('fr-FR');
+                            var timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                            return '<span class="text-muted small">' + dateStr + '<br>' + timeStr + '</span>';
                         }
                     },
                     { 
                         data: 'url', 
                         title: 'URL',
-                        visible: false, // Cachée mais disponible pour l'export
+                        visible: false,
                         render: function(data, type, row) {
-                            return data; // Toujours retourner l'URL brute
+                            return data;
                         }
                     },
                     { 
@@ -53,15 +63,10 @@ class MediaManager {
                         title: 'Lien du fichier',
                         orderable: false,
                         render: function(data, type, row) {
-                            // Pour l'affichage, lien avec bouton copie
-                            return `
-                                <a href="${data}" target="_blank" class="me-2" title="Ouvrir le fichier">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
-                                <button class="btn btn-sm btn-outline-info" onclick="mediaManager.copyUrl('${data}')" title="Copier l'URL">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            `;
+                            return '<a href="' + data + '" target="_blank" class="me-2" title="Ouvrir le fichier">' +
+                                   '<i class="fas fa-external-link-alt"></i></a>' +
+                                   '<button class="btn btn-sm btn-outline-info" onclick="mediaManager.copyUrl(\'' + data + '\')" title="Copier l\'URL">' +
+                                   '<i class="fas fa-copy"></i></button>';
                         }
                     },
                     { 
@@ -69,11 +74,9 @@ class MediaManager {
                         title: 'Actions',
                         orderable: false,
                         render: function(data, type, row) {
-                            return `
-                                <button class="btn btn-sm btn-outline-danger" onclick="mediaManager.confirmDelete('${row.name}', '${row.name.replace(/^pdf\//, '')}')" title="Supprimer le fichier">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            `;
+                            var cleanName = row.name.replace(/^pdf\//, '');
+                            return '<button class="btn btn-sm btn-outline-danger" onclick="mediaManager.confirmDelete(\'' + row.name + '\', \'' + cleanName + '\')" title="Supprimer le fichier">' +
+                                   '<i class="fas fa-trash"></i></button>';
                         }
                     }
                 ],
@@ -85,7 +88,7 @@ class MediaManager {
                         className: 'btn btn-success btn-sm',
                         title: 'Liste des fichiers - ' + new Date().toLocaleDateString('fr-FR'),
                         exportOptions: {
-                            columns: [0, 1] // Nom et URL (exclut Actions colonne 2)
+                            columns: [0, 1, 2] // Nom, Dernière modification, URL (cachée)
                         }
                     }
                 ],
