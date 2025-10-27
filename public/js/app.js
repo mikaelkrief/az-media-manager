@@ -1,6 +1,6 @@
 class MediaManager {
     constructor() {
-        this.filesTable = null;
+        this.dataTable = null;
         this.currentFile = null;
         this.init();
     }
@@ -22,99 +22,79 @@ class MediaManager {
         }
 
         try {
-            this.filesTable = $('#filesTable').DataTable({
-                responsive: true,
-                pageLength: 200,
-                lengthMenu: [[100, 200], [100, 200]],
-                order: [[2, 'desc']],
-                stateSave: true,
-                stateDuration: 60 * 60 * 24,
-                processing: true,
-                deferRender: true,
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/fr-FR.json',
-                    processing: "Traitement en cours...",
-                    search: "Rechercher :",
-                    lengthMenu: "Afficher _MENU_ éléments",
-                    info: "Affichage de l'élément _START_ à _END_ sur _TOTAL_ éléments",
-                    infoEmpty: "Affichage de l'élément 0 à 0 sur 0 élément",
-                    infoFiltered: "(filtré de _MAX_ éléments au total)",
-                    infoThousands: " ",
-                    loadingRecords: "Chargement en cours...",
-                    zeroRecords: "Aucun élément à afficher",
-                    emptyTable: "Aucune donnée disponible dans le tableau",
-                    paginate: {
-                        first: "Premier",
-                        previous: "Précédent",
-                        next: "Suivant",
-                        last: "Dernier"
-                    },
-                    aria: {
-                        sortAscending: ": activer pour trier la colonne par ordre croissant",
-                        sortDescending: ": activer pour trier la colonne par ordre décroissant"
-                    }
-                },
+            this.dataTable = $('#filesTable').DataTable({
+                data: [],
                 columns: [
                     { 
-                        data: 'displayName',
-                        type: 'string',
+                        data: 'name', 
                         title: 'Nom du fichier',
-                        render: (data, type, row) => {
-                            if (type === 'display') {
-                                return `<i class="fas fa-file-pdf text-danger me-2"></i>${data}`;
+                        render: function(data, type, row) {
+                            // Retirer le préfixe pdf/ pour tous les types d'affichage
+                            const cleanName = data.replace(/^pdf\//, '');
+                            
+                            // Pour l'export, retourner juste le nom propre
+                            if (type === 'export') {
+                                return cleanName;
                             }
-                            return data;
+                            // Pour l'affichage, ajouter l'icône
+                            return `<i class="fas fa-file-pdf text-danger me-2"></i>${cleanName}`;
                         }
                     },
                     { 
-                        data: 'url',
-                        type: 'string',
+                        data: 'url', 
                         title: 'URL',
-                        render: (data, type, row) => {
-                            if (type === 'display') {
-                                // Vérification de sécurité pour data
-                                if (!data || typeof data !== 'string') {
-                                    return '<span class="text-muted">URL non disponible</span>';
-                                }
-                                const shortUrl = data.length > 50 ? data.substring(0, 47) + '...' : data;
-                                return `<div class="d-flex align-items-center">
-                                    <span class="text-truncate me-2" style="max-width: 300px;" title="${data}">${shortUrl}</span>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="mediaManager.copyUrl('${data}')" title="Copier l'URL">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>`;
-                            }
-                            return data;
+                        visible: false, // Cachée mais disponible pour l'export
+                        render: function(data, type, row) {
+                            return data; // Toujours retourner l'URL brute
                         }
                     },
                     { 
-                        data: 'lastModified',
-                        type: 'date',
-                        title: 'Date de modification',
-                        render: (data, type) => {
-                            if (type === 'display') {
-                                return new Date(data).toLocaleString('fr-FR');
-                            }
-                            return data;
-                        }
-                    },
-                    { 
-                        data: null,
+                        data: 'url', 
+                        title: 'Lien du fichier',
                         orderable: false,
-                        searchable: false,
-                        title: 'Actions',
-                        render: (data, type, row) => {
-                            return `<div class="file-actions">
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="mediaManager.openFile('${row.url}')" title="Ouvrir">
+                        render: function(data, type, row) {
+                            // Pour l'affichage, lien avec bouton copie
+                            return `
+                                <a href="${data}" target="_blank" class="me-2" title="Ouvrir le fichier">
                                     <i class="fas fa-external-link-alt"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-info" onclick="mediaManager.copyUrl('${data}')" title="Copier l'URL">
+                                    <i class="fas fa-copy"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="mediaManager.confirmDelete('${row.name}', '${row.displayName}')" title="Supprimer">
+                            `;
+                        }
+                    },
+                    { 
+                        data: null, 
+                        title: 'Actions',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return `
+                                <button class="btn btn-sm btn-outline-danger" onclick="mediaManager.confirmDelete('${row.name}', '${row.name.replace(/^pdf\//, '')}')" title="Supprimer le fichier">
                                     <i class="fas fa-trash"></i>
                                 </button>
-                            </div>`;
+                            `;
                         }
                     }
-                ]
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: '<i class="fas fa-file-excel me-2"></i>Exporter Excel',
+                        className: 'btn btn-success btn-sm',
+                        title: 'Liste des fichiers - ' + new Date().toLocaleDateString('fr-FR'),
+                        exportOptions: {
+                            columns: [0, 1] // Nom et URL (exclut Actions colonne 2)
+                        }
+                    }
+                ],
+                responsive: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/fr-FR.json'
+                },
+                pageLength: 25,
+                order: [[0, 'asc']]
             });
             
             console.log('DataTables initialisé avec succès');
@@ -238,15 +218,24 @@ class MediaManager {
             const result = await response.json();
 
             if (result.success) {
-                this.filesTable.clear();
-                // Vérification de sécurité pour result.files
-                if (Array.isArray(result.files)) {
-                    this.filesTable.rows.add(result.files).draw();
-                    console.log(`${result.files.length} fichiers chargés avec succès`);
+                // Vérifier que DataTables est initialisé avant d'essayer de le manipuler
+                if (this.dataTable) {
+                    this.dataTable.clear();
+                    // Vérification de sécurité pour result.files
+                    if (Array.isArray(result.files)) {
+                        this.dataTable.rows.add(result.files).draw();
+                        console.log(`${result.files.length} fichiers chargés avec succès`);
+                    } else {
+                        console.warn('result.files n\'est pas un tableau:', result.files);
+                        this.dataTable.draw();
+                        console.log('0 fichiers chargés (données invalides)');
+                    }
                 } else {
-                    console.warn('result.files n\'est pas un tableau:', result.files);
-                    this.filesTable.draw();
-                    console.log('0 fichiers chargés (données invalides)');
+                    console.warn('DataTables n\'est pas encore initialisé, retry dans 500ms...');
+                    setTimeout(() => {
+                        this.loadFiles();
+                    }, 500);
+                    return;
                 }
             } else {
                 throw new Error(result.error || 'Erreur lors du chargement des fichiers');

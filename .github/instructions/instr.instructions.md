@@ -11,7 +11,7 @@ Pas d'authentification utilisateur n'est necessaire pour l'acces a cette applica
 **Technique:**
 - L'application sera développée en NodeJs / Html / Javascript
 - Acces au Azure Blob Container avec un Service Principal (ClientId et ClientSecret)
-- utilise le Azure SDK pour NodeJs pour gerer les blobs (upload, liste, suppression, gestion des tags)
+- utilise le Azure SDK pour NodeJs pour gerer les blobs (upload, liste, suppression)
 - L'application sera déployée dans une Azure WebApp Linux via un pipeline Azure Devops (donc pas besoin de serveur nodejs express)
 - Le backend est nodejs (utilise la derniere version LTS) avec le azure sdk pour les manioulations des blobs
 - Le frontend est en Html / Javascript avec Bootstrap et Datatables pour l'affichage de la liste des fichiers
@@ -20,10 +20,11 @@ Pas d'authentification utilisateur n'est necessaire pour l'acces a cette applica
 **Fonctionnalités:**
 Cette application doit pouvoir:
 - Lister les fichiers contenus dans mon Container (dans un sous dossier précis).
-    Colonnes : Nom du blob, url du blob, tags du blob sous format badge, lien qui permet d'ouvrir le fichier dans une nouvelle fenetre
+    Colonnes : Nom du blob, url du blob, tlien qui permet d'ouvrir le fichier dans une nouvelle fenetre, hrl du fichier avec bouton de copie dans le presse papier.
+    Pagination à 200 eléments par page
 - permettre d'uploader des fichiers dans le dossier de container
 - permettre de supprimer un fichier uploadé dans ce container
-- permettre pour chaque fichier (blob) uploadé de gerer (ajouter, modifier, supprimer) ses Tags
+- possibilité d'exporter en xls la liste des fichiers affichés
 
 **UI:**
 - utilise le theme Bootstrap (derniere version)
