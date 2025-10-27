@@ -63,7 +63,7 @@ async function testAzurePermissions() {
         
         try {
             const exists = await containerClient.exists();
-            console.log(`   Container "${process.env.AZURE_BLOB_CONTAINER_NAME}" existe:`, exists);
+            console.log(`  ✅ Container "${process.env.AZURE_BLOB_CONTAINER_NAME}" existe:`, exists);
             
             if (!exists) {
                 console.log('   Tentative de création du container...');
