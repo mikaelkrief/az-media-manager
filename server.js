@@ -18,66 +18,16 @@ const blobRoutes = require('./src/routes/blobRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-const cspConfig = process.env.NODE_ENV === 'development' ? {
-  // Configuration moins restrictive pour le développement
+// Security middleware - Configuration simplifiée pour développement
+app.use(helmet({
+  // Désactivation de CSP pour éviter les conflits avec les CDN
   contentSecurityPolicy: false
-} : {
-  // Configuration sécurisée pour la production
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: [
-        "'self'", 
-        "'unsafe-inline'", 
-        "https://cdn.jsdelivr.net", 
-        "https://cdnjs.cloudflare.com",
-        "https://cdn.datatables.net"
-      ],
-      scriptSrc: [
-        "'self'", 
-        "'unsafe-inline'",
-        "https://cdn.jsdelivr.net", 
-        "https://cdnjs.cloudflare.com", 
-        "https://code.jquery.com",
-        "https://cdn.datatables.net"
-      ],
-      fontSrc: [
-        "'self'", 
-        "https://cdnjs.cloudflare.com",
-        "data:"
-      ],
-      imgSrc: [
-        "'self'", 
-        "data:", 
-        "https:",
-        "blob:"
-      ],
-      connectSrc: [
-        "'self'",
-        "https://cdn.jsdelivr.net",
-        "https://cdnjs.cloudflare.com",
-        "https://code.jquery.com",
-        "https://cdn.datatables.net",
-        "https://*.blob.core.windows.net"
-      ],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'", "blob:", "data:"],
-      frameSrc: ["'none'"],
-      workerSrc: ["'self'", "blob:"],
-      childSrc: ["'self'", "blob:"],
-      formAction: ["'self'"],
-      upgradeInsecureRequests: []
-    }
-  }
-};
-
-app.use(helmet(cspConfig));
+}));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
@@ -100,7 +50,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: 'development'
   });
 });
 
@@ -119,7 +69,7 @@ app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ 
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: err.message // Toujours afficher le message d'erreur détaillé
   });
 });
 
@@ -131,7 +81,7 @@ app.use((req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Environment: development (simplified)`);
   console.log(`Health check available at: http://localhost:${PORT}/health`);
 });
 
