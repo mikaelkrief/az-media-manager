@@ -3,9 +3,20 @@ trigger:
 
 pool:
   vmImage: 'ubuntu-latest'
+parameters:
+- name: environment
+  displayName: 'Environment'
+  type: string
+  default: 'PROD'
+  values:
+    - 'PROD'
+    - 'DEV'
 
 variables:
-  - group: $(AzDoVariablesGroup)
+- ${{ if contains(parameters['environment'], 'DEV') }}:
+  - group: "AzMHLMediaManagerDev"
+- ${{ if contains(parameters['environment'], 'PROD') }}:
+  - group: "AzMHLMediaManagerProduction"
 
 
 stages:
