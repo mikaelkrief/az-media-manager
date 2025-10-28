@@ -36,7 +36,7 @@ stages:
 
     - task: AzureWebApp@1
       inputs:
-        azureSubscription: '$(serviceConnectionProduction)'
-        appName: '$(webAppNameProduction)'
+        azureSubscription: '$(serviceConnection)'
+        appName: '$(webAppName)'
         package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         displayName: 'Deploy to Azure Web App'
