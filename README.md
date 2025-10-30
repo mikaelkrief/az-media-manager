@@ -1,21 +1,41 @@
-# MHL Media Manager
+# 📁 MHL Media Manager
 
-Application web de gestion de fichiers pour Azure Blob Storage, développée en Node.js avec une interface Bootstrap.
+> Application web moderne de gestion de fichiers PDF pour Azure Blob Storage
 
-## Fonctionnalités
+[![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
+[![Azure](https://img.shields.io/badge/Azure-Blob%20Storage-blue.svg)](https://azure.microsoft.com/)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.3-purple.svg)](https://getbootstrap.com/)
+[![DataTables](https://img.shields.io/badge/DataTables-1.13.8-orange.svg)](https://datatables.net/)
 
-- **Gestion de fichiers PDF** : Upload, visualisation, suppression
-- **Système de tags** : Ajout, modification et suppression de tags pour chaque fichier
-- **Interface moderne** : Bootstrap 5 avec DataTables pour la navigation
-- **Sécurité** : Authentification via Service Principal Azure
-- **Déploiement** : Pipeline Azure DevOps pour Azure WebApp Linux
+## ✨ Fonctionnalités
 
-## Technologies utilisées
+- 📄 **Gestion de fichiers PDF** : Upload, visualisation, suppression avec drag & drop
+- 📊 **Interface DataTables** : Pagination, recherche, tri et export Excel
+- 🔗 **Liens directs** : Génération d'URLs avec copie presse-papiers
+- 📅 **Métadonnées** : Affichage de la date de dernière modification
+- 🔒 **Sécurité** : Authentification via Service Principal Azure
+- 🚀 **Déploiement** : Pipeline Azure DevOps pour Azure WebApp Linux
+- 📱 **Responsive** : Interface adaptative Bootstrap 5
 
-- **Backend** : Node.js 18+ LTS, Express, Azure SDK
-- **Frontend** : HTML5, Bootstrap 5, jQuery, DataTables
-- **Cloud** : Azure Blob Storage, Azure WebApp Linux
-- **CI/CD** : Azure DevOps Pipelines
+## 🛠️ Technologies
+
+### Backend
+- **Node.js 20.x LTS** - Serveur JavaScript
+- **Express.js** - Framework web
+- **Azure SDK** - Intégration Blob Storage
+- **Helmet.js** - Sécurité HTTP
+- **Rate Limiting** - Protection contre les abus
+
+### Frontend  
+- **Bootstrap 5.3.3** - Framework CSS moderne
+- **DataTables 1.13.8** - Tableaux interactifs avec export Excel
+- **jQuery 3.7.1** - Manipulation DOM
+- **Font Awesome 6.5.1** - Icônes
+
+### Cloud & DevOps
+- **Azure Blob Storage** - Stockage de fichiers
+- **Azure WebApp Linux** - Hébergement
+- **Azure DevOps Pipelines** - CI/CD
 
 ## Prérequis
 
@@ -24,130 +44,225 @@ Application web de gestion de fichiers pour Azure Blob Storage, développée en 
 2. **Azure App Registration** (Service Principal)
 3. **Azure WebApp Linux** (optionnel pour le déploiement)
 
-### Variables d'environnement requises
+## ⚙️ Configuration
+
+### Variables d'environnement (.env)
 ```env
-AZURE_STORAGE_ACCOUNT_NAME=your-storage-account-name
+# Azure Storage Configuration
+AZURE_STORAGE_ACCOUNT_NAME=dataakor
 AZURE_CLIENT_ID=your-service-principal-client-id
 AZURE_CLIENT_SECRET=your-service-principal-client-secret
 AZURE_TENANT_ID=your-tenant-id
-AZURE_BLOB_CONTAINER_NAME=your-container-name
-AZURE_UPLOAD_FOLDER=your-upload-folder
+AZURE_SUBSCRIPTION_ID=your-subscription-id
+AZURE_BLOB_CONTAINER_NAME=medias
+AZURE_UPLOAD_FOLDER=pdf
+
+# Server Configuration
 PORT=3000
-NODE_ENV=production
+NODE_ENV=development
 ```
 
-## Installation locale
+> ⚠️ **Note** : L'application est configurée en mode développement permanent (CSP désactivé) pour éviter les conflits avec les CDN externes.
 
-1. **Cloner le repository**
-   ```bash
-   git clone <repository-url>
-   cd mhl-media-manager
-   ```
+## 🚀 Installation et démarrage
 
-2. **Installer les dépendances**
-   ```bash
-   npm install
-   ```
+### 1. Prérequis
+- **Node.js 20.x LTS** ou plus récent
+- **npm** ou **yarn**
+- **Azure Storage Account** avec container `medias`
+- **Azure Service Principal** avec permissions Blob Storage
 
-3. **Configuration**
-   ```bash
-   cp .env.example .env
-   # Éditer le fichier .env avec vos valeurs Azure
-   ```
+### 2. Installation
+```bash
+# Cloner le repository
+git clone https://github.com/mikaelkrief/az-media-manager.git
+cd az-media-manager
 
-4. **Démarrer l'application**
-   ```bash
-   # Mode développement
-   npm run dev
-   
-   # Mode production
-   npm start
-   ```
+# Installer les dépendances
+npm install
+```
 
-5. **Accéder à l'application**
-   ```
-   http://localhost:3000
-   ```
+### 3. Configuration
+```bash
+# Copier et modifier le fichier de configuration
+cp .env.example .env
+# Éditer .env avec vos credentials Azure
+```
 
-## Configuration Azure
+### 4. Démarrage
+```bash
+# Démarrer l'application
+npm start
+
+# L'application sera accessible sur
+# http://localhost:3000
+```
+
+### 5. Interface utilisateur
+- 📄 **Liste des fichiers** : Tableau avec pagination (200 éléments par défaut)
+- ⬆️ **Upload** : Drag & drop ou sélection de fichiers PDF (max 50MB)
+- 📊 **Export Excel** : Export de la liste avec noms et URLs
+- 🔗 **Liens directs** : Boutons pour ouvrir et copier les URLs
+- 🗑️ **Suppression** : Suppression sécurisée avec confirmation
+
+## ☁️ Configuration Azure
 
 ### 1. Service Principal
-
-Créer un Service Principal avec les permissions suivantes sur le Storage Account :
-- `Storage Blob Data Contributor`
+Créer un Service Principal avec les permissions `Storage Blob Data Contributor` :
 
 ```bash
-# Créer le Service Principal
-az ad sp create-for-rbac --name "mhl-media-manager-sp" --role "Storage Blob Data Contributor" --scopes "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Storage/storageAccounts/{storage-account}"
+az ad sp create-for-rbac \
+  --name "mhl-media-manager-sp" \
+  --role "Storage Blob Data Contributor" \
+  --scopes "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Storage/storageAccounts/{storage-account}"
 ```
 
 ### 2. Storage Account
+1. ✅ Créer un container blob nommé `medias`
+2. ✅ Créer le dossier `pdf` dans le container
+3. ✅ Configurer l'accès public si nécessaire
+4. ✅ Noter le nom du Storage Account pour la configuration
 
-1. Créer un container blob
-2. Configurer l'accès public si nécessaire
-3. Noter le nom du Storage Account
-
-### 3. WebApp (optionnel)
-
-Pour le déploiement :
+### 3. WebApp (pour déploiement)
 ```bash
-az webapp create --resource-group myResourceGroup --plan myAppServicePlan --name myApp --runtime "NODE|18-lts" --os-type Linux
+az webapp create \
+  --resource-group myResourceGroup \
+  --plan myAppServicePlan \
+  --name mhl-media-manager \
+  --runtime "NODE|20-lts" \
+  --os-type Linux
 ```
 
-## Déploiement avec Azure DevOps
+## 🚀 Déploiement Azure DevOps
 
-1. **Configurer les variables dans Azure DevOps** :
-   - `azureSubscription` : Nom de la connexion de service Azure
-   - `webAppName` : Nom de l'Azure WebApp
-   - Variables secrètes pour les credentials Azure
+### Pipeline automatisé
+Le projet inclut un pipeline CI/CD (`azure-pipelines.yml`) avec :
 
-2. **Pipeline automatique** :
-   - Déclenchement sur push vers `main`
-   - Build avec Node.js 18
-   - Déploiement sur Azure WebApp Linux
+**🔨 Build Stage :**
+- Installation Node.js 20.x LTS
+- Installation dépendances production (`npm ci`)
+- Création archive de déploiement
+- Publication artefacts
 
-## API Endpoints
+**🚀 Deploy Stage :**
+- Déploiement Azure WebApp Linux
+- Configuration variables d'environnement
+- Redémarrage automatique
 
-### Fichiers
-- `GET /api/blobs` - Liste tous les fichiers
-- `POST /api/blobs` - Upload un fichier
-- `DELETE /api/blobs/:blobName` - Supprime un fichier
-- `GET /api/blobs/:blobName` - Détails d'un fichier
+### Variables à configurer
+```yaml
+# Azure DevOps > Pipelines > Variables
+azureSubscription: 'AzureServiceConnection'
+webAppName: 'mhl-media-manager'
+# + variables secrètes Azure
+```
 
-### Tags
-- `GET /api/blobs/:blobName/tags` - Récupère les tags d'un fichier
-- `PUT /api/blobs/:blobName/tags` - Met à jour les tags d'un fichier
+## 🔧 Développement et debug
 
-### Système
-- `GET /health` - Health check de l'application
+### Scripts npm
+```bash
+npm start          # Démarrer l'application
+npm install        # Installer les dépendances
+```
 
-## Structure du projet
+### Debugging
+- 🌐 **Health check** : http://localhost:3000/health
+- 🔍 **Console dev** : F12 dans le navigateur
+- 📝 **Logs serveur** : Messages détaillés dans le terminal
+- ⚠️ **Mode développement** : Erreurs complètes affichées
+
+## 📞 Support et contribution
+
+### 🐛 Signaler un bug
+Créer une [issue GitHub](https://github.com/mikaelkrief/az-media-manager/issues) avec :
+- Description du problème
+- Étapes de reproduction
+- Logs d'erreur
+- Environnement (Node.js, navigateur)
+
+### 🤝 Contribuer au projet
+1. **Fork** le repository
+2. **Créer** une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. **Commit** les changements (`git commit -m 'Ajout: nouvelle fonctionnalité'`)
+4. **Push** vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
+5. **Ouvrir** une Pull Request
+
+---
+
+## 📄 License
+
+Ce projet est sous **licence MIT** - voir [LICENSE](LICENSE) pour les détails.
+
+**Développé avec ❤️ pour une gestion moderne des fichiers Azure Blob Storage**
+
+## 🔌 API Endpoints
+
+### 📄 Gestion des fichiers
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/api/blobs` | Liste tous les fichiers avec métadonnées |
+| `POST` | `/api/blobs` | Upload un fichier PDF (max 50MB) |
+| `DELETE` | `/api/blobs/:blobName` | Supprime un fichier du storage |
+
+### 🔧 Système
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/health` | Health check de l'application |
+| `GET` | `/` | Interface web principale |
+
+### 📊 Exemple de réponse API
+```json
+{
+  "success": true,
+  "files": [
+    {
+      "name": "pdf/document.pdf",
+      "url": "https://dataakor.blob.core.windows.net/medias/pdf/document.pdf",
+      "size": 1048576,
+      "lastModified": "2025-10-30T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+## 📁 Structure du projet
 
 ```
 mhl-media-manager/
-├── public/                 # Fichiers statiques (frontend)
-│   ├── index.html         # Interface principale
-│   └── js/
-│       └── app.js         # Logique frontend
-├── src/                   # Code backend
-│   ├── routes/
-│   │   └── blobRoutes.js  # Routes API
-│   └── azureBlobService.js # Service Azure Blob
-├── .github/
-│   └── instructions/      # Instructions du projet
-├── server.js              # Serveur Express principal
-├── package.json           # Dépendances et scripts
-├── azure-pipelines.yml    # Pipeline CI/CD
-└── .env.example           # Template de configuration
+├── 📂 public/                    # Frontend (interface utilisateur)
+│   ├── 🌐 index.html            # Interface principale avec DataTables
+│   └── 📂 js/
+│       └── ⚡ app.js             # Logique frontend (MediaManager)
+├── 📂 src/                      # Backend (API et services)
+│   ├── 📂 routes/
+│   │   └── 🛤️ blobRoutes.js      # Routes API REST
+│   └── ☁️ azureBlobService.js    # Service Azure Blob Storage
+├── 📂 .github/
+│   └── 📂 instructions/         # Documentation technique
+├── 🔧 server.js                 # Serveur Express principal
+├── 📦 package.json              # Dépendances et scripts npm
+├── 🚀 azure-pipelines.yml       # Pipeline CI/CD Azure DevOps
+├── 🔐 .env                      # Configuration (non versionné)
+└── 📖 README.md                 # Documentation
 ```
 
-## Sécurité
+## 🛡️ Sécurité et fonctionnalités
 
-- Helmet.js pour les headers de sécurité
-- Rate limiting pour éviter les abus
-- CORS configuré
-- Validation des types de fichiers (PDF uniquement)
-- Limitation de taille de fichier (50MB)
+### 🔒 Sécurité implémentée
+- **Helmet.js** : Headers de sécurité HTTP
+- **Rate Limiting** : Protection contre les attaques par déni de service
+- **CORS** : Configuration Cross-Origin Resource Sharing
+- **Validation de fichiers** : Seuls les PDF sont acceptés
+- **Limitation de taille** : Maximum 50MB par fichier
+- **CSP désactivé** : Configuration développement pour compatibilité CDN
+
+### ✨ Fonctionnalités avancées
+- **Drag & Drop** : Interface intuitive pour l'upload
+- **Pagination intelligente** : 25, 50, 100, 200 éléments ou tous
+- **Export Excel** : Export des listes avec JSZip et DataTables Buttons
+- **Copie presse-papiers** : URLs directement copiables
+- **Interface responsive** : Compatible mobile et desktop
+- **Gestion d'erreurs** : Messages détaillés et logging complet
 
 ## Développement
 
