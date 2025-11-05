@@ -40,9 +40,8 @@
 ## Prérequis
 
 ### Azure Resources
-1. **Azure Storage Account**
-2. **Azure App Registration** (Service Principal)
-3. **Azure WebApp Linux** (optionnel pour le déploiement)
+1. **Azure Storage Account** avec clés d'accès
+2. **Azure WebApp Linux** (optionnel pour le déploiement)
 
 ## ⚙️ Configuration
 
@@ -50,10 +49,7 @@
 ```env
 # Azure Storage Configuration
 AZURE_STORAGE_ACCOUNT_NAME=dataakor
-AZURE_CLIENT_ID=your-service-principal-client-id
-AZURE_CLIENT_SECRET=your-service-principal-client-secret
-AZURE_TENANT_ID=your-tenant-id
-AZURE_SUBSCRIPTION_ID=your-subscription-id
+AZURE_STORAGE_ACCOUNT_KEY=your-storage-account-access-key
 AZURE_BLOB_CONTAINER_NAME=medias
 AZURE_UPLOAD_FOLDER=pdf
 
@@ -62,7 +58,7 @@ PORT=3000
 NODE_ENV=development
 ```
 
-> ⚠️ **Note** : L'application est configurée en mode développement permanent (CSP désactivé) pour éviter les conflits avec les CDN externes.
+> ⚠️ **Note** : L'application utilise les clés d'accès du Storage Account pour l'authentification (plus simple que Service Principal).
 
 ## 🚀 Installation et démarrage
 
@@ -70,7 +66,7 @@ NODE_ENV=development
 - **Node.js 20.x LTS** ou plus récent
 - **npm** ou **yarn**
 - **Azure Storage Account** avec container `medias`
-- **Azure Service Principal** avec permissions Blob Storage
+- **Access Key** du Storage Account Azure
 
 ### 2. Installation
 ```bash
@@ -107,23 +103,17 @@ npm start
 
 ## ☁️ Configuration Azure
 
-### 1. Service Principal
-Créer un Service Principal avec les permissions `Storage Blob Data Contributor` :
+### 1. Storage Account
+1. ✅ Créer un Storage Account Azure
+2. ✅ Créer un container blob nommé `medias`
+3. ✅ Créer le dossier `pdf` dans le container
+4. ✅ Récupérer l'Access Key du Storage Account :
+   - Aller dans le portail Azure
+   - Ouvrir votre Storage Account
+   - Aller dans "Clés d'accès" (Access keys)
+   - Copier la "Clé" (Key) ou "Chaîne de connexion" (Connection string)
 
-```bash
-az ad sp create-for-rbac \
-  --name "mhl-media-manager-sp" \
-  --role "Storage Blob Data Contributor" \
-  --scopes "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Storage/storageAccounts/{storage-account}"
-```
-
-### 2. Storage Account
-1. ✅ Créer un container blob nommé `medias`
-2. ✅ Créer le dossier `pdf` dans le container
-3. ✅ Configurer l'accès public si nécessaire
-4. ✅ Noter le nom du Storage Account pour la configuration
-
-### 3. WebApp (pour déploiement)
+### 2. WebApp (pour déploiement)
 ```bash
 az webapp create \
   --resource-group myResourceGroup \
@@ -132,6 +122,11 @@ az webapp create \
   --runtime "NODE|20-lts" \
   --os-type Linux
 ```
+
+> 💡 **Avantages de l'Access Key :**
+> - Configuration plus simple (pas de Service Principal à créer)
+> - Authentification directe avec le Storage Account
+> - Moins de prérequis Azure AD
 
 ## 🚀 Déploiement Azure DevOps
 
@@ -154,7 +149,10 @@ Le projet inclut un pipeline CI/CD (`azure-pipelines.yml`) avec :
 # Azure DevOps > Pipelines > Variables
 azureSubscription: 'AzureServiceConnection'
 webAppName: 'mhl-media-manager'
-# + variables secrètes Azure
+AZURE_STORAGE_ACCOUNT_NAME: 'dataakor'
+AZURE_STORAGE_ACCOUNT_KEY: '***' # Variable secrète
+AZURE_BLOB_CONTAINER_NAME: 'medias'
+AZURE_UPLOAD_FOLDER: 'pdf'
 ```
 
 ## 🔧 Développement et debug

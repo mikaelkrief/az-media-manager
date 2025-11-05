@@ -1,15 +1,11 @@
-const { BlobServiceClient } = require('@azure/storage-blob');
-const { ClientSecretCredential } = require('@azure/identity');
+const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob');
 
 class AzureBlobService {
   constructor() {
     this.storageAccountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
+    this.storageAccountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
     this.containerName = process.env.AZURE_BLOB_CONTAINER_NAME;
-    this.uploadFolder = process.env.AZURE_BLOB_UPLOAD_FOLDER || 'pdf';
-    
-    this.tenantId = process.env.AZURE_TENANT_ID;
-    this.clientId = process.env.AZURE_CLIENT_ID;
-    this.clientSecret = process.env.AZURE_CLIENT_SECRET;
+    this.uploadFolder = process.env.AZURE_UPLOAD_FOLDER || 'pdf';
     
     this.blobServiceClient = null;
     this.containerClient = null;
@@ -18,7 +14,7 @@ class AzureBlobService {
   }
 
   init() {
-    if (!this.storageAccountName || !this.containerName || !this.clientId || !this.clientSecret || !this.tenantId) {
+    if (!this.storageAccountName || !this.storageAccountKey || !this.containerName) {
       throw new Error('Missing required Azure configuration');
     }
 
@@ -27,21 +23,18 @@ class AzureBlobService {
       
       console.log('Environment check:');
       console.log('- AZURE_STORAGE_ACCOUNT_NAME:', this.storageAccountName ? 'SET' : 'MISSING');
-      console.log('- AZURE_CLIENT_ID:', this.clientId ? 'SET' : 'MISSING');
-      console.log('- AZURE_CLIENT_SECRET:', this.clientSecret ? 'SET' : 'MISSING');
-      console.log('- AZURE_TENANT_ID:', this.tenantId ? 'SET' : 'MISSING');
+      console.log('- AZURE_STORAGE_ACCOUNT_KEY:', this.storageAccountKey ? 'SET' : 'MISSING');
       console.log('- AZURE_BLOB_CONTAINER_NAME:', this.containerName ? 'SET' : 'MISSING');
 
-      // Create credential using Service Principal
-      const credential = new ClientSecretCredential(
-        this.tenantId,
-        this.clientId,
-        this.clientSecret
+      // Create credential using Storage Account Key
+      const sharedKeyCredential = new StorageSharedKeyCredential(
+        this.storageAccountName,
+        this.storageAccountKey
       );
 
       // Create BlobServiceClient
       const accountUrl = `https://${this.storageAccountName}.blob.core.windows.net`;
-      this.blobServiceClient = new BlobServiceClient(accountUrl, credential);
+      this.blobServiceClient = new BlobServiceClient(accountUrl, sharedKeyCredential);
       
       console.log('Azure Blob Service initialized successfully');
     } catch (error) {
