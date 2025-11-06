@@ -45,6 +45,38 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API routes
 app.use('/api/blobs', blobRoutes);
 
+// Endpoint de diagnostic pour vérifier la configuration Azure
+app.get('/api/diagnostic', (req, res) => {
+  const diagnostic = {
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: process.env.PORT || '3000',
+    azure: {
+      storageAccountName: process.env.AZURE_STORAGE_ACCOUNT_NAME ? 'SET' : 'NOT SET',
+      storageAccountKey: process.env.AZURE_STORAGE_ACCOUNT_KEY ? `SET (${process.env.AZURE_STORAGE_ACCOUNT_KEY.length} chars)` : 'NOT SET',
+      containerName: process.env.AZURE_BLOB_CONTAINER_NAME ? process.env.AZURE_BLOB_CONTAINER_NAME : 'NOT SET',
+      uploadFolder: process.env.AZURE_UPLOAD_FOLDER ? process.env.AZURE_UPLOAD_FOLDER : 'NOT SET (default: pdf)'
+    },
+    warnings: []
+  };
+
+  // Vérifications et avertissements
+  if (!process.env.AZURE_STORAGE_ACCOUNT_NAME) {
+    diagnostic.warnings.push('AZURE_STORAGE_ACCOUNT_NAME is not set');
+  }
+  if (!process.env.AZURE_STORAGE_ACCOUNT_KEY) {
+    diagnostic.warnings.push('AZURE_STORAGE_ACCOUNT_KEY is not set');
+  }
+  if (!process.env.AZURE_BLOB_CONTAINER_NAME) {
+    diagnostic.warnings.push('AZURE_BLOB_CONTAINER_NAME is not set');
+  }
+  if (!process.env.AZURE_UPLOAD_FOLDER) {
+    diagnostic.warnings.push('AZURE_UPLOAD_FOLDER is not set - will use default "pdf"');
+  }
+
+  res.json(diagnostic);
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 

@@ -214,7 +214,31 @@ class MediaManager {
                 body: formData
             });
 
-            const result = await response.json();
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            // Vérifier le type de contenu
+            const contentType = response.headers.get('content-type');
+            console.log('Content-Type:', contentType);
+            
+            // Lire la réponse comme texte d'abord pour voir ce qu'on reçoit
+            const responseText = await response.text();
+            console.log('Response text:', responseText);
+            
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (jsonError) {
+                console.error('JSON Parse Error:', jsonError);
+                console.error('Response was not JSON:', responseText);
+                
+                // Si ce n'est pas du JSON, c'est probablement une erreur serveur
+                if (response.status >= 400) {
+                    throw new Error(`Server error (${response.status}): ${responseText || 'Unknown error'}`);
+                } else {
+                    throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+                }
+            }
 
             if (result.success) {
                 this.showAlert('Fichier uploadé avec succès !', 'success');
