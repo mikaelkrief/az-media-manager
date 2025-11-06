@@ -84,9 +84,16 @@ class AzureBlobService {
         blobCount++;
         console.log(`Blob trouvé #${blobCount}: ${blob.name}`);
         
+        // Le nom du blob contient déjà le chemin complet (ex: "pdf/document.pdf")
+        // On extrait juste le nom du fichier pour l'affichage
+        const fileName = blob.name.split('/').pop();
+        console.log(`  -> Nom complet: ${blob.name}`);
+        console.log(`  -> Nom affiché: ${fileName}`);
+        console.log(`  -> URL générée: ${containerClient.url}/${blob.name}`);
+        
         blobs.push({
-          name: blob.name,
-          displayName: blob.name.split('/').pop(),
+          name: blob.name,  // Nom complet pour les opérations (ex: "pdf/document.pdf")
+          displayName: fileName,  // Nom pour l'affichage (ex: "document.pdf")
           url: `${containerClient.url}/${blob.name}`,
           size: blob.properties.contentLength,
           lastModified: blob.properties.lastModified,

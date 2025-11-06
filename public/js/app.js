@@ -29,7 +29,9 @@ class MediaManager {
                         data: 'name', 
                         title: 'Nom du fichier',
                         render: function(data, type, row) {
-                            var cleanName = data.replace(/^pdf\//, '');
+                            // Utiliser displayName si disponible, sinon nettoyer le nom complet
+                            var cleanName = row.displayName || data.split('/').pop();
+                            
                             if (type === 'export') {
                                 return cleanName;
                             }
@@ -74,7 +76,8 @@ class MediaManager {
                         title: 'Actions',
                         orderable: false,
                         render: function(data, type, row) {
-                            var cleanName = row.name.replace(/^pdf\//, '');
+                            // Utiliser displayName si disponible, sinon nettoyer le nom complet
+                            var cleanName = row.displayName || row.name.split('/').pop();
                             return '<button class="btn btn-sm btn-outline-danger" onclick="mediaManager.confirmDelete(\'' + row.name + '\', \'' + cleanName + '\')" title="Supprimer le fichier">' +
                                    '<i class="fas fa-trash"></i></button>';
                         }
