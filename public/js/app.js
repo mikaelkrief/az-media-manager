@@ -2,6 +2,7 @@ class MediaManager {
     constructor() {
         this.dataTable = null;
         this.currentFile = null;
+        this.authToken = null; // Token Easy Auth (Entra ID) mis en cache
         this.init();
     }
 
@@ -9,6 +10,37 @@ class MediaManager {
         this.initializeDataTable();
         this.setupEventListeners();
         this.loadFiles();
+    }
+
+    // Récupère et met en cache le token d'authentification Easy Auth (/.auth/me)
+    async getAuthToken() {
+        if (this.authToken) return this.authToken;
+        try {
+            const resp = await fetch('/.auth/me', { credentials: 'include' });
+            if (!resp.ok) return null;
+            const data = await resp.json();
+            // data est un tableau; on prend le premier provider
+            if (Array.isArray(data) && data.length > 0) {
+                // access_token (API Graph/Entra) ou id_token; EasyAuth accepte généralement l'id_token
+                const tok = data[0].access_token || data[0].id_token;
+                if (tok) {
+                    this.authToken = tok;
+                    return tok;
+                }
+            }
+        } catch (e) {
+            console.warn('Impossible de récupérer le token Easy Auth:', e);
+        }
+        return null;
+    }
+
+    async addAuth(options = {}) {
+        const token = await this.getAuthToken();
+        const headers = new Headers(options.headers || {});
+        if (token && !headers.has('Authorization')) {
+            headers.set('Authorization', 'Bearer ' + token);
+        }
+        return { ...options, headers, credentials: 'include' };
     }
 
     initializeDataTable() {
@@ -209,11 +241,10 @@ class MediaManager {
             uploadBtn.disabled = true;
             uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Upload...';
 
-            const response = await fetch('/api/blobs', {
+            const response = await fetch('/api/blobs', await this.addAuth({
                 method: 'POST',
-                body: formData,
-                credentials: 'include' // Inclure tous les cookies (nécessaire pour Entra ID)
-            });
+                body: formData
+            }));
 
             console.log('Response status:', response.status);
             console.log('Response headers:', response.headers);
@@ -272,9 +303,7 @@ class MediaManager {
 
     async loadFiles() {
         try {
-            const response = await fetch('/api/blobs', {
-                credentials: 'same-origin' // Inclure les cookies d'authentification
-            });
+            const response = await fetch('/api/blobs', await this.addAuth());
             const result = await response.json();
 
             if (result.success) {
@@ -395,10 +424,9 @@ class MediaManager {
             confirmBtn.disabled = true;
             confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Suppression...';
 
-            const response = await fetch(`/api/blobs/${encodeURIComponent(this.currentFile)}`, {
-                method: 'DELETE',
-                credentials: 'same-origin' // Inclure les cookies d'authentification
-            });
+            const response = await fetch(`/api/blobs/${encodeURIComponent(this.currentFile)}`, await this.addAuth({
+                method: 'DELETE'
+            }));
 
             const result = await response.json();
 
