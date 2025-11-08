@@ -52,10 +52,25 @@ app.get('/api/diagnostic', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     port: process.env.PORT || '3000',
     azure: {
-      storageAccountName: process.env.AZURE_STORAGE_ACCOUNT_NAME ? 'SET' : 'NOT SET',
+      storageAccountName: process.env.AZURE_STORAGE_ACCOUNT_NAME || 'NOT SET',
       storageAccountKey: process.env.AZURE_STORAGE_ACCOUNT_KEY ? `SET (${process.env.AZURE_STORAGE_ACCOUNT_KEY.length} chars)` : 'NOT SET',
-      containerName: process.env.AZURE_BLOB_CONTAINER_NAME ? process.env.AZURE_BLOB_CONTAINER_NAME : 'NOT SET',
-      uploadFolder: process.env.AZURE_UPLOAD_FOLDER ? process.env.AZURE_UPLOAD_FOLDER : 'NOT SET (default: pdf)'
+      containerName: process.env.AZURE_BLOB_CONTAINER_NAME || 'NOT SET',
+      uploadFolder: process.env.AZURE_UPLOAD_FOLDER || 'NOT SET (default: pdf)'
+    },
+    allEnvVars: {
+      // Afficher toutes les variables qui commencent par AZURE_
+      ...Object.keys(process.env)
+        .filter(key => key.startsWith('AZURE_'))
+        .reduce((obj, key) => {
+          obj[key] = key === 'AZURE_STORAGE_ACCOUNT_KEY' 
+            ? `SET (${process.env[key].length} chars)` 
+            : process.env[key];
+          return obj;
+        }, {}),
+      // Autres variables importantes
+      NODE_ENV: process.env.NODE_ENV,
+      WEBSITE_SITE_NAME: process.env.WEBSITE_SITE_NAME,
+      WEBSITE_RESOURCE_GROUP: process.env.WEBSITE_RESOURCE_GROUP
     },
     warnings: []
   };
@@ -75,6 +90,31 @@ app.get('/api/diagnostic', (req, res) => {
   }
 
   res.json(diagnostic);
+});
+
+// Endpoint de test simple pour l'upload
+app.post('/api/test-upload', (req, res) => {
+  try {
+    console.log('=== TEST UPLOAD ENDPOINT ===');
+    console.log('Headers:', req.headers);
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Content-Length:', req.headers['content-length']);
+    
+    res.json({
+      success: true,
+      message: 'Test upload endpoint reached',
+      timestamp: new Date().toISOString(),
+      headers: req.headers,
+      hasBody: !!req.body,
+      bodySize: req.body ? JSON.stringify(req.body).length : 0
+    });
+  } catch (error) {
+    console.error('Test upload error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // Health check endpoint

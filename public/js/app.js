@@ -211,7 +211,8 @@ class MediaManager {
 
             const response = await fetch('/api/blobs', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin' // Important : inclure les cookies d'authentification
             });
 
             console.log('Response status:', response.status);
@@ -271,7 +272,9 @@ class MediaManager {
 
     async loadFiles() {
         try {
-            const response = await fetch('/api/blobs');
+            const response = await fetch('/api/blobs', {
+                credentials: 'same-origin' // Inclure les cookies d'authentification
+            });
             const result = await response.json();
 
             if (result.success) {
@@ -393,7 +396,8 @@ class MediaManager {
             confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Suppression...';
 
             const response = await fetch(`/api/blobs/${encodeURIComponent(this.currentFile)}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'same-origin' // Inclure les cookies d'authentification
             });
 
             const result = await response.json();
