@@ -1,0 +1,34 @@
+{
+  "platform": {
+    "enabled": true
+  },
+  "globalValidation": {
+    "requireAuthentication": true,
+    "unauthenticatedClientAction": "AllowAnonymous",
+    "excludedPaths": [
+      "/api",
+      "/api/*"
+    ]
+  },
+  "identityProviders": {
+    "azureActiveDirectory": {
+      "enabled": true,
+      "registration": {
+        "clientIdSettingName": "MICROSOFT_PROVIDER_CLIENT_ID",
+        "clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET",
+        "openIdIssuer": "https://sts.windows.net/2e3a33f9-66b1-4e2a-8b95-74102ad857c2/v2.0"
+      }
+    }
+  },
+  "login": {
+    "tokenStore": {
+      "enabled": true
+    }
+  },
+  "httpSettings": {
+    "requireHttps": true,
+    "routes": {
+      "apiPrefix": "/.auth"
+    }
+  }
+}

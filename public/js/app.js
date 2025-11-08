@@ -17,14 +17,22 @@ class MediaManager {
         if (this.authToken) return this.authToken;
         try {
             const resp = await fetch('/.auth/me', { credentials: 'include' });
-            if (!resp.ok) return null;
-            const data = await resp.json();
+            console.log('/.auth/me status:', resp.status);
+            if (!resp.ok) { console.warn('/.auth/me non OK'); return null; }
+            const text = await resp.text();
+            console.log('/.auth/me raw length:', text.length);
+            let data;
+            try { data = JSON.parse(text); } catch(parseErr){
+              console.warn('Parse /.auth/me failed', parseErr);
+              return null;
+            }
             // data est un tableau; on prend le premier provider
             if (Array.isArray(data) && data.length > 0) {
                 // access_token (API Graph/Entra) ou id_token; EasyAuth accepte généralement l'id_token
                 const tok = data[0].access_token || data[0].id_token;
                 if (tok) {
                     this.authToken = tok;
+                    console.log('Token récupéré (longueur):', tok.length);
                     return tok;
                 }
             }

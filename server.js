@@ -73,6 +73,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API routes
 app.use('/api/blobs', blobRoutes);
 
+// Endpoint de debug pour voir les headers reçus (temporaire)
+app.all('/api/debug-headers', (req, res) => {
+  res.json({
+    method: req.method,
+    path: req.path,
+    headers: req.headers,
+    auth: {
+      hasClientPrincipal: !!req.headers['x-ms-client-principal'],
+      hasAuthToken: !!(req.headers['authorization'] && req.headers['authorization'].toLowerCase().startsWith('bearer '))
+    },
+    time: new Date().toISOString()
+  });
+});
+
 // Endpoint de diagnostic pour vérifier la configuration Azure
 app.get('/api/diagnostic', (req, res) => {
   const diagnostic = {

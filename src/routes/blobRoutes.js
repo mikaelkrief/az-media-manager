@@ -42,7 +42,15 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/blobs - Upload a new blob
-router.post('/', upload.single('file'), async (req, res) => {
+router.post('/', (req, res, next) => {
+  // Log minimal des headers d'auth avant traitement multer
+  console.log('POST /api/blobs headers (excerpt):', {
+    authorization: req.headers['authorization'] ? 'present' : 'absent',
+    xMsClientPrincipal: req.headers['x-ms-client-principal'] ? 'present' : 'absent',
+    contentType: req.headers['content-type']
+  });
+  next();
+}, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
