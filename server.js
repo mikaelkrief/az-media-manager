@@ -39,6 +39,34 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Middleware d'authentification custom basé sur Easy Auth (Entra ID)
+// Objectif : Laisser les routes /api/* accessibles anonymement mais protéger l'UI
+// Pré-requis : Dans Azure Portal > Authentication, configurer "Unauthenticated requests" sur Allow anonymous
+// Easy Auth ajoutera les en-têtes x-ms-client-principal* si l'utilisateur est authentifié
+function requireAuthForUI(req, res, next) {
+  // Laisser passer toutes les routes API
+  if (req.path.startsWith('/api/')) return next();
+
+  // Fichiers statiques (css/js/images) autorisés sans auth pour charger la page de login potentielle
+  const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2'];
+  const lowerPath = req.path.toLowerCase();
+  if (staticExtensions.some(ext => lowerPath.endsWith(ext))) return next();
+
+  // Easy Auth principal header
+  const principalHeader = req.headers['x-ms-client-principal'];
+
+  if (!principalHeader) {
+    // Rediriger vers le flux de login Easy Auth (Azure AD)
+    const redirectUrl = `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(req.originalUrl)}`;
+    return res.redirect(302, redirectUrl);
+  }
+
+  // Utilisateur authentifié
+  return next();
+}
+
+app.use(requireAuthForUI);
+
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
