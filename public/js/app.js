@@ -212,7 +212,7 @@ class MediaManager {
             const response = await fetch('/api/blobs', {
                 method: 'POST',
                 body: formData,
-                credentials: 'same-origin' // Important : inclure les cookies d'authentification
+                credentials: 'include' // Inclure tous les cookies (nécessaire pour Entra ID)
             });
 
             console.log('Response status:', response.status);
