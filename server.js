@@ -44,25 +44,38 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Pré-requis : Dans Azure Portal > Authentication, configurer "Unauthenticated requests" sur Allow anonymous
 // Easy Auth ajoutera les en-têtes x-ms-client-principal* si l'utilisateur est authentifié
 function requireAuthForUI(req, res, next) {
-  // Laisser passer toutes les routes API
-  if (req.path.startsWith('/api/')) return next();
+  const path = req.path || '';
 
-  // Fichiers statiques (css/js/images) autorisés sans auth pour charger la page de login potentielle
-  const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2'];
-  const lowerPath = req.path.toLowerCase();
-  if (staticExtensions.some(ext => lowerPath.endsWith(ext))) return next();
+  // Laisser passer toutes les routes API et Easy Auth
+  if (path.startsWith('/api/')) return next();
+  if (path.startsWith('/.auth/')) return next();
 
-  // Easy Auth principal header
-  const principalHeader = req.headers['x-ms-client-principal'];
+  // Ne protéger que les pages HTML (GET + Accept: text/html). Laisse passer assets et XHR.
+  const accept = req.headers['accept'] || '';
+  if (req.method !== 'GET' || !accept.includes('text/html')) return next();
 
-  if (!principalHeader) {
-    // Rediriger vers le flux de login Easy Auth (Azure AD)
-    const redirectUrl = `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(req.originalUrl)}`;
-    return res.redirect(302, redirectUrl);
+  // Si déjà authentifié via Easy Auth (header) ou cookie de session, laisser passer
+  const hasPrincipal = !!req.headers['x-ms-client-principal'];
+  const cookies = req.headers['cookie'] || '';
+  const hasAuthCookie = cookies.includes('AppServiceAuthSession=');
+  if (hasPrincipal || hasAuthCookie) return next();
+
+  // Éviter les boucles: si on revient déjà d'une tentative, ne pas boucler
+  if (req.query && (req.query.mm_auth_attempt === '1')) {
+    return res.status(401).send('Authentication required. Login failed or not configured.');
   }
 
-  // Utilisateur authentifié
-  return next();
+  // Rediriger vers AAD avec retour vers l'URL demandée + flag anti-boucle
+  try {
+    const base = `${req.protocol}://${req.get('host') || ''}`;
+    const urlObj = new URL(req.originalUrl, base);
+    urlObj.searchParams.set('mm_auth_attempt', '1');
+    const redirectUrl = `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(urlObj.toString())}`;
+    return res.redirect(302, redirectUrl);
+  } catch {
+    // Fallback simple
+    return res.redirect(302, '/.auth/login/aad');
+  }
 }
 
 app.use(requireAuthForUI);
