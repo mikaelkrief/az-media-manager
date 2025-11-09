@@ -16,7 +16,7 @@
       "registration": {
         "clientIdSettingName": "MICROSOFT_PROVIDER_CLIENT_ID",
         "clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET",
-        "openIdIssuer": "https://sts.windows.net/b1dd2f9a-efcf-4a4a-94fe-50f3fa5208c5/v2.0"
+        "openIdIssuer": "https://login.microsoftonline.com/b1dd2f9a-efcf-4a4a-94fe-50f3fa5208c5/v2.0"
       },
       "login": {
         "disableWWWAuthenticate": false
