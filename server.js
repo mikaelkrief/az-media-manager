@@ -43,42 +43,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Objectif : Laisser les routes /api/* accessibles anonymement mais protéger l'UI
 // Pré-requis : Dans Azure Portal > Authentication, configurer "Unauthenticated requests" sur Allow anonymous
 // Easy Auth ajoutera les en-têtes x-ms-client-principal* si l'utilisateur est authentifié
-function requireAuthForUI(req, res, next) {
-  const path = req.path || '';
-
-  // Laisser passer toutes les routes API et Easy Auth
-  if (path.startsWith('/api/')) return next();
-  if (path.startsWith('/.auth/')) return next();
-
-  // Ne protéger que les pages HTML (GET + Accept: text/html). Laisse passer assets et XHR.
-  const accept = req.headers['accept'] || '';
-  if (req.method !== 'GET' || !accept.includes('text/html')) return next();
-
-  // Si déjà authentifié via Easy Auth (header) ou cookie de session, laisser passer
-  const hasPrincipal = !!req.headers['x-ms-client-principal'];
-  const cookies = req.headers['cookie'] || '';
-  const hasAuthCookie = cookies.includes('AppServiceAuthSession=');
-  if (hasPrincipal || hasAuthCookie) return next();
-
-  // Éviter les boucles: si on revient déjà d'une tentative, ne pas boucler
-  if (req.query && (req.query.mm_auth_attempt === '1')) {
-    return res.status(401).send('Authentication required. Login failed or not configured.');
-  }
-
-  // Rediriger vers AAD avec retour vers l'URL demandée + flag anti-boucle
-  try {
-    const base = `${req.protocol}://${req.get('host') || ''}`;
-    const urlObj = new URL(req.originalUrl, base);
-    urlObj.searchParams.set('mm_auth_attempt', '1');
-    const redirectUrl = `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(urlObj.toString())}`;
-    return res.redirect(302, redirectUrl);
-  } catch {
-    // Fallback simple
-    return res.redirect(302, '/.auth/login/aad');
-  }
-}
-
-app.use(requireAuthForUI);
+// Suppression du middleware custom d'auth : on laisse Easy Auth (Azure) gérer entièrement
+// Si Easy Auth est actif, les endpoints /.auth/* ne devraient jamais atteindre Node.
+// Si vous souhaitez réactiver une protection custom, réintroduire un middleware minimal ici.
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
