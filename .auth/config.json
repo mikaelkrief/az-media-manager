@@ -4,7 +4,7 @@
   },
   "globalValidation": {
     "requireAuthentication": true,
-    "unauthenticatedClientAction": "AllowAnonymous",
+    "unauthenticatedClientAction": "RedirectToLoginPage",
     "excludedPaths": [
       "/api",
       "/api/*"
@@ -16,7 +16,7 @@
       "registration": {
         "clientIdSettingName": "MICROSOFT_PROVIDER_CLIENT_ID",
         "clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET",
-        "openIdIssuer": "https://sts.windows.net/2e3a33f9-66b1-4e2a-8b95-74102ad857c2/v2.0"
+        "openIdIssuer": "https://login.microsoftonline.com/2e3a33f9-66b1-4e2a-8b95-74102ad857c2/v2.0"
       }
     }
   },
