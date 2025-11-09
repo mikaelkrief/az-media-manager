@@ -1,0 +1,53 @@
+{
+  "platform": {
+    "enabled": true
+  },
+  "globalValidation": {
+    "requireAuthentication": true,
+    "unauthenticatedClientAction": "RedirectToLoginPage",
+    "excludedPaths": [
+      "/api",
+      "/api/*"
+    ]
+  },
+  "identityProviders": {
+    "azureActiveDirectory": {
+      "enabled": true,
+      "registration": {
+        "clientIdSettingName": "MICROSOFT_PROVIDER_CLIENT_ID",
+        "clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET",
+        "openIdIssuer": "https://sts.windows.net/b1dd2f9a-efcf-4a4a-94fe-50f3fa5208c5/v2.0"
+      },
+      "login": {
+        "disableWWWAuthenticate": false
+      },
+      "validation": {
+        "jwtClaimChecks": {},
+        "allowedAudiences": [
+          "api://8f4183bc-ceff-4061-bc7f-91e39b053b36"
+        ],
+        "defaultAuthorizationPolicy": {
+          "allowedPrincipals": {},
+          "allowedApplications": [
+            "8f4183bc-ceff-4061-bc7f-91e39b053b36"
+          ]
+        }
+      },
+      "isAutoProvisioned": true
+    }
+  },
+  "login": {
+    "tokenStore": {
+      "enabled": true
+    }
+  },
+  "httpSettings": {
+    "requireHttps": true,
+    "routes": {
+      "apiPrefix": "/.auth"
+    },
+    "forwardProxy": {
+      "convention": "NoProxy"
+    }
+  }
+}
