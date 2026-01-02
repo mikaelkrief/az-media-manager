@@ -46,6 +46,21 @@
         .modal-body .form-control {
             margin-bottom: 10px;
         }
+        .table-responsive {
+            margin: 0;
+        }
+        .dataTables_wrapper {
+            width: 100%;
+        }
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            padding: 0.5rem 0;
+        }
+        #filesTable, #videosTable {
+            width: 100% !important;
+        }
     </style>
 </head>
 <body>
@@ -54,41 +69,107 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 class="h3 mb-0">
-                        <i class="fas fa-file text-danger me-2"></i>
+                        <i class="fas fa-photo-video text-primary me-2"></i>
                         MHL Media Manager
                     </h1>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                        <i class="fas fa-upload me-2"></i>
-                        Télécharger un fichier
-                    </button>
                 </div>
 
                 <!-- Alert for messages -->
                 <div id="alertContainer"></div>
 
-                <!-- Files table -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-list me-2"></i>
-                            Fichiers
-                        </h5>
+                <!-- Navigation Tabs -->
+                <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="files-tab" data-bs-toggle="tab" data-bs-target="#files-panel" type="button" role="tab">
+                            <i class="fas fa-file-pdf text-danger me-2"></i>
+                            Fichiers PDF
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="videos-tab" data-bs-toggle="tab" data-bs-target="#videos-panel" type="button" role="tab">
+                            <i class="fab fa-youtube text-danger me-2"></i>
+                            Vidéos YouTube
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="mainTabContent">
+                    <!-- PDF Files Panel -->
+                    <div class="tab-pane fade show active" id="files-panel" role="tabpanel">
+                        <div class="d-flex justify-content-end mb-3">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                                <i class="fas fa-upload me-2"></i>
+                                Télécharger un fichier
+                            </button>
+                        </div>
+
+                        <!-- Files table -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Fichiers PDF
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table id="filesTable" class="table table-striped table-hover w-100">
+                                    <thead>
+                                        <tr>
+                                            <th>Nom du fichier</th>
+                                            <th>Dernière modification</th>
+                                            <th>URL</th>
+                                            <th>Lien du fichier</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded here -->
+                                    </tbody>
+                                </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <table id="filesTable" class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Nom du fichier</th>
-                                    <th>Dernière modification</th>
-                                    <th>URL</th>
-                                    <th>Lien du fichier</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data will be loaded here -->
-                            </tbody>
-                        </table>
+
+                    <!-- YouTube Videos Panel -->
+                    <div class="tab-pane fade" id="videos-panel" role="tabpanel">
+                        <div class="d-flex justify-content-end mb-3">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#videoModal">
+                                <i class="fas fa-plus me-2"></i>
+                                Ajouter une vidéo
+                            </button>
+                        </div>
+
+                        <!-- Videos table -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Vidéos YouTube
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table id="videosTable" class="table table-striped table-hover w-100">
+                                    <thead>
+                                        <tr>
+                                            <th>Titre</th>
+                                            <th>YouTube ID</th>
+                                            <th>Tags</th>
+                                            <th>Date de création</th>
+                                            <th>Statut</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded here -->
+                                    </tbody>
+                                </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -164,6 +245,157 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-2"></i>
+                        Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Modal (Create/Edit) -->
+    <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="videoModalLabel">
+                        <i class="fab fa-youtube text-danger me-2"></i>
+                        <span id="videoModalTitle">Ajouter une vidéo YouTube</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="videoForm">
+                        <input type="hidden" id="videoId" name="videoId">
+                        
+                        <div class="mb-3">
+                            <label for="youtubeId" class="form-label">
+                                ID YouTube <span class="text-danger">*</span>
+                                <small class="text-muted">(depuis l'URL: youtube.com/watch?v=<strong>VIDEO_ID</strong>)</small>
+                            </label>
+                            <input type="text" class="form-control" id="youtubeId" name="youtubeId" required 
+                                   placeholder="Ex: dQw4w9WgXcQ">
+                            <div class="form-text">L'ID de la vidéo YouTube (11 caractères)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="videoTitle" class="form-label">
+                                Titre <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="videoTitle" name="title" required 
+                                   placeholder="Ex: Promo Janvier 2026">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="videoDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="videoDescription" name="description" rows="4" 
+                                      placeholder="Description de la vidéo..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="videoTags" class="form-label">Tags</label>
+                            <input type="text" class="form-control" id="videoTags" name="tags" 
+                                   placeholder="Ex: promo, janvier, 2026 (séparés par des virgules)">
+                            <div class="form-text">Séparez les tags par des virgules</div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="videoPublished" name="isPublished">
+                            <label class="form-check-label" for="videoPublished">
+                                <i class="fas fa-eye me-1"></i>
+                                Publier cette vidéo
+                            </label>
+                            <div class="form-text">Les vidéos non publiées ne seront pas visibles dans le player</div>
+                        </div>
+
+                        <div id="videoPreview" class="mt-3 d-none">
+                            <div class="alert alert-info">
+                                <strong><i class="fab fa-youtube me-2"></i>Aperçu:</strong>
+                                <div class="ratio ratio-16x9 mt-2">
+                                    <iframe id="videoPreviewFrame" src="" frameborder="0" allowfullscreen></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="saveVideoBtn">
+                        <i class="fas fa-save me-2"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Details Modal -->
+    <div class="modal fade" id="videoDetailsModal" tabindex="-1" aria-labelledby="videoDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="videoDetailsModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Détails de la vidéo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="ratio ratio-16x9 mb-3">
+                        <iframe id="videoDetailsFrame" src="" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                    <h5 id="videoDetailsTitle"></h5>
+                    <p class="text-muted" id="videoDetailsYoutubeId"></p>
+                    <div id="videoDetailsTags" class="mb-3"></div>
+                    <p id="videoDetailsDescription"></p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted" id="videoDetailsDate"></small>
+                        <span id="videoDetailsStatus"></span>
+                    </div>
+                    <hr>
+                    <div class="mb-2">
+                        <label class="form-label"><strong>Lien du player:</strong></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="videoPlayerUrl" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="copyPlayerUrlBtn">
+                                <i class="fas fa-copy"></i> Copier
+                            </button>
+                        </div>
+                        <div class="form-text">URL à partager pour voir cette vidéo dans le player statique</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Video Modal -->
+    <div class="modal fade" id="deleteVideoModal" tabindex="-1" aria-labelledby="deleteVideoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteVideoModalLabel">
+                        <i class="fas fa-trash text-danger me-2"></i>
+                        Confirmer la suppression
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Êtes-vous sûr de vouloir supprimer cette vidéo ?</p>
+                    <div class="alert alert-warning">
+                        <i class="fab fa-youtube me-2"></i>
+                        <span id="deleteVideoTitle"></span>
+                    </div>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Cette action est irréversible. La vidéo ne sera pas supprimée de YouTube.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteVideoBtn">
                         <i class="fas fa-trash me-2"></i>
                         Supprimer
                     </button>
