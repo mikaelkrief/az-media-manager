@@ -59,6 +59,12 @@ const API_BASE = 'http://localhost:3000'; // Change to your Azure App Service UR
         throw new Error('Format de réponse invalide');
       }
 
+      // Vérifier si la vidéo est publiée
+      if (!data.video.isPublished) {
+        showError('Cette vidéo n\'est pas disponible. Elle n\'a pas encore été publiée.');
+        return;
+      }
+
       renderVideo(data.video);
     } catch (error) {
       console.error('Error loading video:', error);

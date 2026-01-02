@@ -132,8 +132,8 @@ class MediaManager {
                 buttons: [
                     {
                         extend: 'excelHtml5',
-                        text: '<i class="fas fa-file-excel me-2"></i>Exporter Excel',
-                        className: 'btn btn-success btn-sm',
+                        text: '<i class="fas fa-file-excel"></i> Exporter Excel',
+                        className: 'ui green button',
                         title: 'Liste des fichiers - ' + new Date().toLocaleDateString('fr-FR'),
                         exportOptions: {
                             columns: [0, 1, 2] // Nom, Dernière modification, URL (cachée)
@@ -588,8 +588,8 @@ class MediaManager {
                 buttons: [
                     {
                         extend: 'excelHtml5',
-                        text: '<i class="fas fa-file-excel me-2"></i>Exporter Excel',
-                        className: 'btn btn-success btn-sm',
+                        text: '<i class="fas fa-file-excel"></i> Exporter Excel',
+                        className: 'ui green button',
                         title: 'Liste des vidéos - ' + new Date().toLocaleDateString('fr-FR'),
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4]
@@ -638,11 +638,21 @@ class MediaManager {
     }
 
     setupVideoEventListeners() {
-        // YouTube ID preview
+        // YouTube ID/URL preview avec auto-fill
         const youtubeIdInput = document.getElementById('youtubeId');
         if (youtubeIdInput) {
+            let debounceTimer;
             youtubeIdInput.addEventListener('input', (e) => {
-                this.previewVideo(e.target.value);
+                const extractedId = this.extractYoutubeId(e.target.value);
+                if (extractedId) {
+                    this.previewVideo(extractedId);
+                    
+                    // Debounce pour ne pas faire trop d'appels API
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => {
+                        this.fetchYoutubeInfo(extractedId);
+                    }, 1000); // Attendre 1 seconde après la dernière frappe
+                }
             });
         }
 
@@ -706,6 +716,87 @@ class MediaManager {
         }
     }
 
+    /**
+     * Extrait l'ID YouTube depuis une URL ou retourne l'ID si déjà fourni
+     * @param {string} input - URL YouTube ou ID
+     * @returns {string|null} - ID YouTube ou null si invalide
+     */
+    extractYoutubeId(input) {
+        if (!input) return null;
+        
+        // Si c'est déjà un ID (11 caractères alphanumériques)
+        if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
+            return input;
+        }
+        
+        // Patterns d'URL YouTube
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+        ];
+        
+        for (const pattern of patterns) {
+            const match = input.match(pattern);
+            if (match && match[1]) {
+                return match[1];
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Récupère les informations de la vidéo depuis YouTube (titre, description)
+     * @param {string} youtubeId - ID YouTube
+     */
+    async fetchYoutubeInfo(youtubeId) {
+        try {
+            // Ne pas écraser si les champs sont déjà remplis (en mode édition)
+            const titleInput = document.getElementById('videoTitle');
+            const descriptionInput = document.getElementById('videoDescription');
+            const videoIdField = document.getElementById('videoId');
+            
+            // Si on est en mode édition, ne pas auto-remplir
+            if (videoIdField.value) {
+                return;
+            }
+            
+            // Afficher un indicateur de chargement
+            const originalTitlePlaceholder = titleInput.placeholder;
+            const originalDescPlaceholder = descriptionInput.placeholder;
+            titleInput.placeholder = 'Chargement...';
+            descriptionInput.placeholder = 'Chargement...';
+            
+            const response = await fetch(`/api/youtube-videos/info/${youtubeId}`);
+            const result = await response.json();
+            
+            if (result.success && result.info) {
+                // Pré-remplir uniquement si les champs sont vides
+                if (!titleInput.value) {
+                    titleInput.value = result.info.title;
+                }
+                if (!descriptionInput.value) {
+                    descriptionInput.value = result.info.description;
+                }
+                
+                // Notification succès
+                this.showAlert('Informations récupérées depuis YouTube !', 'success', 2000);
+            } else {
+                console.warn('Could not fetch YouTube info:', result.error);
+            }
+            
+            // Restaurer les placeholders
+            titleInput.placeholder = originalTitlePlaceholder;
+            descriptionInput.placeholder = originalDescPlaceholder;
+            
+        } catch (error) {
+            console.error('Error fetching YouTube info:', error);
+            // Pas d'alerte d'erreur pour ne pas perturber l'utilisateur
+        }
+    }
+
     async loadVideos() {
         try {
             const response = await fetch('/api/youtube-videos', await this.addAuth());
@@ -734,11 +825,19 @@ class MediaManager {
         const isEdit = !!videoId;
 
         // Validation
-        const youtubeId = document.getElementById('youtubeId').value.trim();
+        let youtubeIdInput = document.getElementById('youtubeId').value.trim();
         const title = document.getElementById('videoTitle').value.trim();
 
-        if (!youtubeId || !title) {
-            this.showAlert('YouTube ID et titre sont obligatoires', 'warning');
+        if (!youtubeIdInput || !title) {
+            this.showAlert('YouTube ID/URL et titre sont obligatoires', 'warning');
+            return;
+        }
+
+        // Extraire l'ID YouTube depuis l'URL si nécessaire
+        const youtubeId = this.extractYoutubeId(youtubeIdInput);
+        
+        if (!youtubeId) {
+            this.showAlert('ID ou URL YouTube invalide', 'warning');
             return;
         }
 

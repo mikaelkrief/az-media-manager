@@ -1,7 +1,47 @@
 const express = require('express');
 const youtubeService = require('../youtubeService');
+const ytdl = require('@distube/ytdl-core');
 
 const router = express.Router();
+
+// GET /api/youtube-videos/info/:youtubeId - Get video info from YouTube (sans API key)
+router.get('/info/:youtubeId', async (req, res) => {
+  try {
+    const { youtubeId } = req.params;
+    
+    // Construire l'URL YouTube
+    const videoUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
+    
+    // Vérifier si l'URL est valide
+    if (!ytdl.validateURL(videoUrl)) {
+      return res.json({
+        success: false,
+        error: 'Invalid YouTube video ID'
+      });
+    }
+    
+    // Récupérer les informations de la vidéo
+    const info = await ytdl.getInfo(videoUrl);
+    const videoDetails = info.videoDetails;
+    
+    res.json({
+      success: true,
+      info: {
+        title: videoDetails.title,
+        description: videoDetails.description,
+        thumbnails: videoDetails.thumbnails,
+        channelTitle: videoDetails.author.name,
+        duration: videoDetails.lengthSeconds
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching YouTube info:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Could not fetch video information'
+    });
+  }
+});
 
 // GET /api/youtube-videos - List all videos (with optional filters)
 router.get('/', async (req, res) => {
