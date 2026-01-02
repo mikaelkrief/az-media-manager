@@ -278,7 +278,7 @@
 
     <!-- Video Modal (Create/Edit) -->
     <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="videoModalLabel">
@@ -291,46 +291,50 @@
                     <form id="videoForm">
                         <input type="hidden" id="videoId" name="videoId">
                         
-                        <div class="mb-3">
-                            <label for="youtubeId" class="form-label">
-                                ID ou URL YouTube <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control" id="youtubeId" name="youtubeId" required 
-                                   placeholder="Ex: dQw4w9WgXcQ ou https://www.youtube.com/watch?v=dQw4w9WgXcQ">
-                            <div class="form-text">L'ID ou l'URL complète de la vidéo YouTube</div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="youtubeId" class="form-label">
+                                    ID ou URL YouTube <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="youtubeId" name="youtubeId" required 
+                                       placeholder="Ex: dQw4w9WgXcQ">
+                                <div class="form-text">L'ID ou l'URL complète YouTube</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="videoTitle" class="form-label">
+                                    Titre <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="videoTitle" name="title" required 
+                                       placeholder="Ex: Promo Janvier 2026">
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="videoTitle" class="form-label">
-                                Titre <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control" id="videoTitle" name="title" required 
-                                   placeholder="Ex: Promo Janvier 2026">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="videoDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="videoDescription" name="description" rows="3" 
+                                          placeholder="Description de la vidéo..."></textarea>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="videoTags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="videoTags" name="tags" 
+                                       placeholder="Ex: promo, janvier, 2026">
+                                <div class="form-text">Séparez les tags par des virgules</div>
+                                
+                                <div class="form-check mt-3">
+                                    <input type="checkbox" class="form-check-input" id="videoPublished" name="isPublished">
+                                    <label class="form-check-label" for="videoPublished">
+                                        <i class="fas fa-eye me-1"></i>
+                                        Publier cette vidéo
+                                    </label>
+                                    <div class="form-text">Non publiée = non visible dans le player</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="videoDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="videoDescription" name="description" rows="4" 
-                                      placeholder="Description de la vidéo..."></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="videoTags" class="form-label">Tags</label>
-                            <input type="text" class="form-control" id="videoTags" name="tags" 
-                                   placeholder="Ex: promo, janvier, 2026 (séparés par des virgules)">
-                            <div class="form-text">Séparez les tags par des virgules</div>
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="videoPublished" name="isPublished">
-                            <label class="form-check-label" for="videoPublished">
-                                <i class="fas fa-eye me-1"></i>
-                                Publier cette vidéo
-                            </label>
-                            <div class="form-text">Les vidéos non publiées ne seront pas visibles dans le player</div>
-                        </div>
-
-                        <div id="videoPreview" class="mt-3 d-none">
+                        <div id="videoPreview" class="mt-2 d-none">
                             <div class="alert alert-info">
                                 <strong><i class="fab fa-youtube me-2"></i>Aperçu:</strong>
                                 <div class="ratio ratio-16x9 mt-2">
