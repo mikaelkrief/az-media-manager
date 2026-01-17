@@ -1,6 +1,6 @@
 // Test script to check YouTube catalog
 require('dotenv').config();
-const youtubeService = require('./src/youtubeService');
+const youtubeService = require('../src/youtubeService');
 
 async function testCatalog() {
   try {

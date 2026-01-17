@@ -1,5 +1,5 @@
 // Simple test to verify YouTube service functionality
-const youtubeService = require('./src/youtubeService');
+const youtubeService = require('../src/youtubeService');
 
 console.log('🧪 Testing YouTube Service...\n');
 
