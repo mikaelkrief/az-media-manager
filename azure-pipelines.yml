@@ -44,9 +44,136 @@ stages:
         replaceExistingArchive: true
       displayName: 'Archive files'
 
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        ArtifactName: 'webapp'
+        publishLocation: 'Container'
+      displayName: 'Publish webapp artifact'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/static-player'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/static-player-$(Build.BuildId).zip'
+        replaceExistingArchive: true
+      displayName: 'Archive static player files'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/static-player-$(Build.BuildId).zip'
+        ArtifactName: 'static-player'
+        publishLocation: 'Container'
+      displayName: 'Publish static player artifact'
+
+- stage: Deploy
+  displayName: 'Deploy to Azure'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: 'DeployWebApp'
+    displayName: 'Deploy Web App'
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'webapp'
+        downloadPath: '$(System.ArtifactsDirectory)'
+      displayName: 'Download webapp artifact'
+
     - task: AzureWebApp@1
       inputs:
         azureSubscription: '$(serviceConnection)'
         appName: '$(webAppName)'
-        package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        displayName: 'Deploy to Azure Web App'
+        package: '$(System.ArtifactsDirectory)/webapp/*.zip'
+      displayName: 'Deploy to Azure Web App'
+
+    - task: AzureAppServiceSettings@1
+      inputs:
+        azureSubscription: '$(serviceConnection)'
+        appName: '$(webAppName)'
+        resourceGroupName: '$(resourceGroupName)'
+        appSettings: |
+          [
+            {
+              "name": "AZURE_STORAGE_ACCOUNT_NAME",
+              "value": "$(AZURE_STORAGE_ACCOUNT_NAME)",
+              "slotSetting": false
+            },
+            {
+              "name": "AZURE_STORAGE_ACCOUNT_KEY",
+              "value": "$(AZURE_STORAGE_ACCOUNT_KEY)",
+              "slotSetting": false
+            },
+            {
+              "name": "AZURE_BLOB_CONTAINER_NAME",
+              "value": "$(AZURE_BLOB_CONTAINER_NAME)",
+              "slotSetting": false
+            },
+            {
+              "name": "AZURE_UPLOAD_FOLDER",
+              "value": "$(AZURE_UPLOAD_FOLDER)",
+              "slotSetting": false
+            },
+            {
+              "name": "VIDEO_CATALOG_BLOB",
+              "value": "$(VIDEO_CATALOG_BLOB)",
+              "slotSetting": false
+            },
+            {
+              "name": "PLAYER_BASE_URL",
+              "value": "$(PLAYER_BASE_URL)",
+              "slotSetting": false
+            },
+            {
+              "name": "ALLOWED_ORIGIN",
+              "value": "$(ALLOWED_ORIGIN)",
+              "slotSetting": false
+            },
+            {
+              "name": "NODE_ENV",
+              "value": "production",
+              "slotSetting": false
+            }
+          ]
+      displayName: 'Configure Web App Settings (Merge Mode)'
+
+  - job: 'DeployStaticPlayer'
+    displayName: 'Deploy Static Player to Storage'
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'static-player'
+        downloadPath: '$(System.ArtifactsDirectory)'
+      displayName: 'Download static player artifact'
+
+    - task: ExtractFiles@1
+      inputs:
+        archiveFilePatterns: '$(System.ArtifactsDirectory)/static-player/*.zip'
+        destinationFolder: '$(System.DefaultWorkingDirectory)/static-player-extracted'
+        cleanDestinationFolder: true
+      displayName: 'Extract static player files'
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: '$(serviceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Updating player.js with backend URL..."
+          sed -i "s|const API_BASE = '.*'|const API_BASE = 'https://$(webAppName).azurewebsites.net'|g" $(System.DefaultWorkingDirectory)/static-player-extracted/player.js
+          
+          echo "Uploading static player files to Azure Storage..."
+          az storage blob upload-batch \
+            --account-name $(STATIC_STORAGE_ACCOUNT_NAME) \
+            --account-key $(STATIC_STORAGE_ACCOUNT_KEY) \
+            --destination '$web' \
+            --source $(System.DefaultWorkingDirectory)/static-player-extracted \
+            --overwrite true
+          
+          echo "Static player deployed successfully!"
+      displayName: 'Deploy Static Player to $web container'
