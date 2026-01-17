@@ -131,11 +131,6 @@ stages:
               "name": "ALLOWED_ORIGIN",
               "value": "$(ALLOWED_ORIGIN)",
               "slotSetting": false
-            },
-            {
-              "name": "NODE_ENV",
-              "value": "production",
-              "slotSetting": false
             }
           ]
       displayName: 'Configure Web App Settings (Merge Mode)'
@@ -169,8 +164,8 @@ stages:
           
           echo "Uploading static player files to Azure Storage..."
           az storage blob upload-batch \
-            --account-name $(STATIC_STORAGE_ACCOUNT_NAME) \
-            --account-key $(STATIC_STORAGE_ACCOUNT_KEY) \
+            --account-name $(AZURE_STORAGE_ACCOUNT_NAME) \
+            --account-key $(AZURE_STORAGE_ACCOUNT_KEY) \
             --destination '$web' \
             --source $(System.DefaultWorkingDirectory)/static-player-extracted \
             --overwrite true
