@@ -5,16 +5,31 @@ class MediaManager {
         this.currentFile = null;
         this.currentVideo = null;
         this.authToken = null; // Token Easy Auth (Entra ID) mis en cache
+        this.playerBaseUrl = null; // URL du player statique
         this.init();
     }
 
     init() {
+        this.loadConfig();
         this.initializeDataTable();
         this.initializeVideosDataTable();
         this.setupEventListeners();
         this.setupVideoEventListeners();
         this.loadFiles();
         this.loadVideos();
+    }
+
+    async loadConfig() {
+        try {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            this.playerBaseUrl = config.playerBaseUrl;
+            console.log('Player base URL:', this.playerBaseUrl);
+        } catch (error) {
+            console.error('Error loading config:', error);
+            // Fallback to current origin
+            this.playerBaseUrl = `${window.location.origin}/player`;
+        }
     }
 
     // Récupère et met en cache le token d'authentification Easy Auth (/.auth/me)
@@ -517,15 +532,21 @@ class MediaManager {
                         title: 'Titre',
                         render: function(data, type, row) {
                             if (type === 'export') return data;
-                            return '<i class="fab fa-youtube text-danger me-2"></i>' + data;
+                            // Afficher l'icône selon la plateforme
+                            const icon = row.platformType === 'vimeo' 
+                                ? '<i class="fab fa-vimeo-v text-primary me-2"></i>'
+                                : '<i class="fab fa-youtube text-danger me-2"></i>';
+                            return icon + data;
                         }
                     },
                     { 
-                        data: 'youtubeId',
-                        title: 'YouTube ID',
+                        data: 'videoId',
+                        title: 'Video ID',
                         render: function(data, type, row) {
-                            if (type === 'export') return data;
-                            return '<code>' + data + '</code>';
+                            if (type === 'export') return (row.platformType || 'youtube').toUpperCase() + ': ' + (data || row.youtubeId);
+                            const platform = (row.platformType || 'youtube').toUpperCase();
+                            const id = data || row.youtubeId;
+                            return '<span class="badge bg-secondary me-1">' + platform + '</span><code>' + id + '</code>';
                         }
                     },
                     { 
@@ -638,20 +659,37 @@ class MediaManager {
     }
 
     setupVideoEventListeners() {
-        // YouTube ID/URL preview avec auto-fill
-        const youtubeIdInput = document.getElementById('youtubeId');
-        if (youtubeIdInput) {
+        // Platform type selection
+        const platformRadios = document.querySelectorAll('input[name="platformType"]');
+        platformRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.updatePlatformUI(e.target.value);
+                // Clear and hide preview when switching platforms
+                document.getElementById('videoPreview').classList.add('d-none');
+                document.getElementById('videoPreviewFrame').src = '';
+            });
+        });
+
+        // YouTube/Vimeo ID/URL preview avec auto-fill
+        const videoIdInput = document.getElementById('videoIdInput');
+        if (videoIdInput) {
             let debounceTimer;
-            youtubeIdInput.addEventListener('input', (e) => {
-                const extractedId = this.extractYoutubeId(e.target.value);
+            videoIdInput.addEventListener('input', (e) => {
+                const platformType = document.querySelector('input[name="platformType"]:checked').value;
+                const extractedId = platformType === 'youtube' 
+                    ? this.extractYoutubeId(e.target.value)
+                    : this.extractVimeoId(e.target.value);
+                
                 if (extractedId) {
-                    this.previewVideo(extractedId);
+                    this.previewVideo(extractedId, platformType);
                     
-                    // Debounce pour ne pas faire trop d'appels API
-                    clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(() => {
-                        this.fetchYoutubeInfo(extractedId);
-                    }, 1000); // Attendre 1 seconde après la dernière frappe
+                    // Debounce pour ne pas faire trop d'appels API (uniquement pour YouTube)
+                    if (platformType === 'youtube') {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(() => {
+                            this.fetchYoutubeInfo(extractedId);
+                        }, 1000); // Attendre 1 seconde après la dernière frappe
+                    }
                 }
             });
         }
@@ -692,23 +730,70 @@ class MediaManager {
                 this.loadVideos();
             });
         }
+
+        // Platform filter buttons
+        const platformFilters = document.querySelectorAll('input[name="platformFilter"]');
+        platformFilters.forEach(filter => {
+            filter.addEventListener('change', (e) => {
+                this.filterVideosByPlatform(e.target.value);
+            });
+        });
     }
 
-    previewVideo(youtubeId) {
+    filterVideosByPlatform(platform) {
+        if (!this.videosDataTable) return;
+
+        if (platform === 'all') {
+            // Afficher toutes les vidéos
+            this.videosDataTable.column(1).search('').draw();
+        } else {
+            // Filtrer par plateforme (colonne 1 = Video ID avec badge de plateforme)
+            this.videosDataTable.column(1).search(platform.toUpperCase(), true, false).draw();
+        }
+    }
+
+    updatePlatformUI(platformType) {
+        const platformLabel = document.getElementById('platformLabel');
+        const platformHelp = document.getElementById('platformHelp');
+        const videoIdInput = document.getElementById('videoIdInput');
+        const modalIcon = document.getElementById('videoModalIcon');
+        const previewIcon = document.getElementById('previewIcon');
+        
+        if (platformType === 'vimeo') {
+            platformLabel.textContent = 'Vimeo';
+            platformHelp.textContent = "L'ID ou l'URL complète Vimeo";
+            videoIdInput.placeholder = 'Ex: 123456789 ou https://vimeo.com/...';
+            modalIcon.className = 'fab fa-vimeo-v text-primary me-2';
+            previewIcon.className = 'fab fa-vimeo-v me-2';
+        } else if (platformType === 'youtube') {
+            platformLabel.textContent = 'YouTube';
+            platformHelp.textContent = "L'ID ou l'URL complète YouTube";
+            videoIdInput.placeholder = 'Ex: dQw4w9WgXcQ ou https://youtube.com/watch?v=...';
+            modalIcon.className = 'fab fa-youtube text-danger me-2';
+            previewIcon.className = 'fab fa-youtube me-2';
+        }
+    }
+
+    previewVideo(videoId, platformType) {
         const preview = document.getElementById('videoPreview');
         const frame = document.getElementById('videoPreviewFrame');
         
-        if (youtubeId && youtubeId.length >= 11) {
-            // Configuration complète de l'iframe (comme dans le player)
-            // IMPORTANT: Définir tous les attributs AVANT le src
+        if (videoId && ((platformType === 'youtube' && videoId.length >= 11) || (platformType === 'vimeo' && videoId.length > 0))) {
+            // Configuration complète de l'iframe
             frame.width = '560';
             frame.height = '315';
             frame.frameBorder = '0';
             frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
             frame.referrerPolicy = 'strict-origin-when-cross-origin';
             frame.allowFullscreen = true;
-            // Définir le src en dernier pour que tous les attributs soient appliqués
-            frame.src = `https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0&modestbranding=1`;
+            
+            // Définir le src selon la plateforme
+            if (platformType === 'youtube') {
+                frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+            } else if (platformType === 'vimeo') {
+                frame.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+            }
+            
             preview.classList.remove('d-none');
         } else {
             preview.classList.add('d-none');
@@ -824,26 +909,33 @@ class MediaManager {
         const videoId = document.getElementById('videoId').value;
         const isEdit = !!videoId;
 
+        // Get platform type
+        const platformType = document.querySelector('input[name="platformType"]:checked').value;
+        
         // Validation
-        let youtubeIdInput = document.getElementById('youtubeId').value.trim();
+        let videoIdInput = document.getElementById('videoIdInput').value.trim();
         const title = document.getElementById('videoTitle').value.trim();
 
-        if (!youtubeIdInput || !title) {
-            this.showAlert('YouTube ID/URL et titre sont obligatoires', 'warning');
+        if (!videoIdInput || !title) {
+            this.showAlert('ID/URL de la vidéo et titre sont obligatoires', 'warning');
             return;
         }
 
-        // Extraire l'ID YouTube depuis l'URL si nécessaire
-        const youtubeId = this.extractYoutubeId(youtubeIdInput);
+        // Extraire l'ID de la vidéo selon la plateforme
+        const extractedVideoId = platformType === 'youtube' 
+            ? this.extractYoutubeId(videoIdInput)
+            : this.extractVimeoId(videoIdInput);
         
-        if (!youtubeId) {
-            this.showAlert('ID ou URL YouTube invalide', 'warning');
+        if (!extractedVideoId) {
+            this.showAlert(`ID ou URL ${platformType.toUpperCase()} invalide`, 'warning');
             return;
         }
 
         // Prepare data
         const videoData = {
-            youtubeId: youtubeId,
+            platformType: platformType,
+            videoId: extractedVideoId,
+            youtubeId: platformType === 'youtube' ? extractedVideoId : undefined,  // Rétrocompatibilité
             title: title,
             description: document.getElementById('videoDescription').value.trim(),
             tags: document.getElementById('videoTags').value
@@ -906,7 +998,14 @@ class MediaManager {
                     
                     // Fill form
                     document.getElementById('videoId').value = video.id;
-                    document.getElementById('youtubeId').value = video.youtubeId;
+                    
+                    // Set platform type
+                    const platformType = video.platformType || 'youtube';
+                    document.getElementById(platformType === 'youtube' ? 'platformYoutube' : 'platformVimeo').checked = true;
+                    this.updatePlatformUI(platformType);
+                    
+                    // Set video ID
+                    document.getElementById('videoIdInput').value = video.videoId || video.youtubeId;
                     document.getElementById('videoTitle').value = video.title;
                     document.getElementById('videoDescription').value = video.description || '';
                     document.getElementById('videoTags').value = video.tags ? video.tags.join(', ') : '';
@@ -916,7 +1015,7 @@ class MediaManager {
                     document.getElementById('videoModalTitle').textContent = 'Modifier la vidéo';
                     
                     // Show preview
-                    this.previewVideo(video.youtubeId);
+                    this.previewVideo(video.videoId || video.youtubeId, platformType);
                     
                     // Show modal
                     const modal = new bootstrap.Modal(document.getElementById('videoModal'));
@@ -948,12 +1047,20 @@ class MediaManager {
                 frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
                 frame.referrerPolicy = 'strict-origin-when-cross-origin';
                 frame.allowFullscreen = true;
-                // Définir le src en dernier pour que tous les attributs soient appliqués
-                frame.src = `https://www.youtube-nocookie.com/embed/${video.youtubeId}?rel=0&modestbranding=1`;
+                
+                // Définir le src selon la plateforme
+                const platformType = video.platformType || 'youtube';
+                const videoId = video.videoId || video.youtubeId;
+                
+                if (platformType === 'youtube') {
+                    frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+                } else if (platformType === 'vimeo') {
+                    frame.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+                }
                 
                 document.getElementById('videoDetailsTitle').textContent = video.title;
                 document.getElementById('videoDetailsYoutubeId').textContent = 
-                    `YouTube ID: ${video.youtubeId}`;
+                    `${platformType.toUpperCase()} ID: ${videoId}`;
                 
                 // Tags
                 const tagsContainer = document.getElementById('videoDetailsTags');
@@ -983,7 +1090,7 @@ class MediaManager {
                 }
                 
                 // Player URL (you'll need to configure this based on your static player deployment)
-                const playerUrl = `${window.location.origin}/player/player.html?id=${video.id}`;
+                const playerUrl = `${this.playerBaseUrl}/player.html?id=${video.id}`;
                 document.getElementById('videoPlayerUrl').value = playerUrl;
                 
                 // Show modal
@@ -1071,7 +1178,9 @@ class MediaManager {
     resetVideoForm() {
         document.getElementById('videoForm').reset();
         document.getElementById('videoId').value = '';
-        document.getElementById('videoModalTitle').textContent = 'Ajouter une vidéo YouTube';
+        document.getElementById('videoModalTitle').textContent = 'Ajouter une vidéo';
+        document.getElementById('platformVimeo').checked = true;
+        this.updatePlatformUI('vimeo');
         document.getElementById('videoPreview').classList.add('d-none');
         document.getElementById('videoPreviewFrame').src = '';
     }

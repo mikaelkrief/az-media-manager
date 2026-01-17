@@ -6,7 +6,7 @@ class YoutubeService {
     this.storageAccountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
     this.storageAccountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
     this.containerName = process.env.AZURE_BLOB_CONTAINER_NAME;
-    this.catalogBlobName = process.env.YOUTUBE_CATALOG_BLOB || 'meta/catalog.youtube.json';
+    this.catalogBlobName = process.env.VIDEO_CATALOG_BLOB || process.env.YOUTUBE_CATALOG_BLOB || 'meta/catalog.videos.json';
     
     this.blobServiceClient = null;
     this.containerClient = null;
@@ -20,7 +20,7 @@ class YoutubeService {
     }
 
     try {
-      console.log('Initializing YouTube Catalog Service...');
+      console.log('Initializing Video Catalog Service (YouTube & Vimeo)...');
       
       // Create credential using Storage Account Key
       const sharedKeyCredential = new StorageSharedKeyCredential(
@@ -33,7 +33,7 @@ class YoutubeService {
       this.blobServiceClient = new BlobServiceClient(accountUrl, sharedKeyCredential);
       this.containerClient = this.blobServiceClient.getContainerClient(this.containerName);
       
-      console.log('YouTube Catalog Service initialized successfully');
+      console.log('Video Catalog Service initialized successfully');
       console.log('Catalog blob name:', this.catalogBlobName);
       
       // Ensure catalog exists
@@ -53,9 +53,9 @@ class YoutubeService {
       const exists = await blobClient.exists();
       
       if (!exists) {
-        console.log('Creating initial YouTube catalog...');
+        console.log('Creating initial video catalog (YouTube & Vimeo)...');
         const initialCatalog = {
-          version: 1,
+          version: 2,  // v2 avec support multi-plateformes
           updatedAt: new Date().toISOString(),
           items: []
         };
@@ -67,7 +67,7 @@ class YoutubeService {
           }
         });
         
-        console.log('YouTube catalog created successfully');
+        console.log('Video catalog created successfully');
       }
     } catch (error) {
       console.error('Error ensuring YouTube catalog exists:', error);
@@ -225,7 +225,9 @@ class YoutubeService {
     try {
       const newVideo = {
         id: uuidv4(),
-        youtubeId: videoData.youtubeId,
+        platformType: videoData.platformType || 'youtube',  // 'youtube' ou 'vimeo'
+        videoId: videoData.videoId || videoData.youtubeId,  // ID universel
+        youtubeId: videoData.youtubeId,  // Rétrocompatibilité
         title: videoData.title,
         description: videoData.description || '',
         tags: videoData.tags || [],
@@ -234,16 +236,23 @@ class YoutubeService {
       };
       
       // Validate required fields
-      if (!newVideo.youtubeId || !newVideo.title) {
-        throw new Error('VALIDATION_ERROR: youtubeId and title are required');
+      if (!newVideo.videoId || !newVideo.title) {
+        throw new Error('VALIDATION_ERROR: videoId and title are required');
+      }
+      
+      // Validate platform type
+      if (!['youtube', 'vimeo'].includes(newVideo.platformType)) {
+        throw new Error('VALIDATION_ERROR: platformType must be youtube or vimeo');
       }
       
       // Update catalog atomically
       await this.updateYoutubeCatalogAtomic(catalog => {
-        // Check for duplicate youtubeId
-        const exists = catalog.items.some(v => v.youtubeId === videoData.youtubeId);
+        // Check for duplicate videoId on same platform
+        const exists = catalog.items.some(v => 
+          v.videoId === newVideo.videoId && v.platformType === newVideo.platformType
+        );
         if (exists) {
-          throw new Error('DUPLICATE_VIDEO: A video with this YouTube ID already exists');
+          throw new Error(`DUPLICATE_VIDEO: A video with this ${newVideo.platformType.toUpperCase()} ID already exists`);
         }
         
         catalog.items.push(newVideo);
@@ -275,13 +284,18 @@ class YoutubeService {
           throw new Error('VIDEO_NOT_FOUND');
         }
         
-        // Apply updates (don't allow changing id or createdAt)
-        const allowedFields = ['youtubeId', 'title', 'description', 'tags', 'isPublished'];
+        // Apply updates (don't allow changing id, createdAt, or platformType)
+        const allowedFields = ['videoId', 'youtubeId', 'title', 'description', 'tags', 'isPublished'];
         allowedFields.forEach(field => {
           if (updates[field] !== undefined) {
             catalog.items[index][field] = updates[field];
           }
         });
+        
+        // Ensure backwards compatibility - sync youtubeId with videoId if platformType is youtube
+        if (catalog.items[index].platformType === 'youtube' && updates.videoId) {
+          catalog.items[index].youtubeId = updates.videoId;
+        }
         
         updatedVideo = catalog.items[index];
         return catalog;

@@ -15,12 +15,12 @@
 - 🔗 **Liens directs** : Génération d'URLs avec copie presse-papiers
 - 📅 **Métadonnées** : Affichage de la date de dernière modification
 
-### Gestion de vidéos YouTube (nouveau)
-- 🎥 **Référencement vidéos** : Catalogage de vidéos YouTube (upload manuel sur YouTube)
+### Gestion de vidéos (YouTube & Vimeo)
+- 🎥 **Multi-plateformes** : Support de YouTube et Vimeo dans la même interface
 - 📝 **Métadonnées complètes** : Titre, description, tags, statut de publication
 - 🔐 **Contrôle de concurrence** : Système ETag pour éviter les conflits d'édition
 - 🎬 **Player statique** : Lecteur vidéo embeddé (déployable sur Azure Static Web Apps)
-- 🔒 **Mode privacy-enhanced** : Utilisation de youtube-nocookie.com
+- 🔒 **Mode privacy-enhanced** : Utilisation de youtube-nocookie.com et Vimeo DNT
 
 ### Sécurité et déploiement
 - 🔒 **Sécurité** : Authentification via Service Principal Azure
@@ -63,8 +63,12 @@ AZURE_STORAGE_ACCOUNT_KEY=your-storage-account-access-key
 AZURE_BLOB_CONTAINER_NAME=medias
 AZURE_UPLOAD_FOLDER=pdf
 
-# YouTube Catalog Configuration
-YOUTUBE_CATALOG_BLOB=meta/catalog.youtube.json
+# Video Catalog Configuration (YouTube & Vimeo)
+VIDEO_CATALOG_BLOB=meta/catalog.videos.json
+YOUTUBE_CATALOG_BLOB=meta/catalog.youtube.json  # Legacy support
+
+# Player Configuration (for external hosting)
+PLAYER_BASE_URL=https://your-static-player-site.azurestaticapps.net
 
 # CORS Configuration (for static player)
 ALLOWED_ORIGIN=https://your-static-site.z6.web.core.windows.net,https://another-domain.com

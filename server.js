@@ -82,6 +82,13 @@ app.use('/player', express.static(path.join(__dirname, 'static-player')));
 app.use('/api/blobs', blobRoutes);
 app.use('/api/youtube-videos', youtubeRoutes);
 
+// Configuration endpoint - expose player URL to frontend
+app.get('/api/config', (req, res) => {
+  res.json({
+    playerBaseUrl: process.env.PLAYER_BASE_URL || `${req.protocol}://${req.get('host')}/player`
+  });
+});
+
 // Endpoint de debug pour voir les headers reçus (temporaire)
 app.all('/api/debug-headers', (req, res) => {
   res.json({

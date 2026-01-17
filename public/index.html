@@ -111,7 +111,7 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="videos-tab" data-bs-toggle="tab" data-bs-target="#videos-panel" type="button" role="tab">
                             <i class="fab fa-youtube text-danger me-2"></i>
-                            Vidéos YouTube
+                            Videos
                         </button>
                     </li>
                 </ul>
@@ -168,10 +168,28 @@
                         <!-- Videos table -->
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-list me-2"></i>
-                                    Vidéos YouTube
-                                </h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-list me-2"></i>
+                                        Videos
+                                    </h5>
+                                    <div class="btn-group" role="group" aria-label="Platform filter">
+                                        <input type="radio" class="btn-check" name="platformFilter" id="filterAll" value="all" checked autocomplete="off">
+                                        <label class="btn btn-outline-secondary btn-sm" for="filterAll">
+                                            <i class="fas fa-globe me-1"></i>Toutes
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="platformFilter" id="filterVimeo" value="vimeo" autocomplete="off">
+                                        <label class="btn btn-outline-primary btn-sm" for="filterVimeo">
+                                            <i class="fab fa-vimeo-v me-1"></i>Vimeo
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="platformFilter" id="filterYoutube" value="youtube" autocomplete="off">
+                                        <label class="btn btn-outline-danger btn-sm" for="filterYoutube">
+                                            <i class="fab fa-youtube me-1"></i>YouTube
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -282,8 +300,8 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="videoModalLabel">
-                        <i class="fab fa-youtube text-danger me-2"></i>
-                        <span id="videoModalTitle">Ajouter une vidéo YouTube</span>
+                        <i id="videoModalIcon" class="fab fa-vimeo-v text-primary me-2"></i>
+                        <span id="videoModalTitle">Ajouter une vidéo</span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -292,13 +310,32 @@
                         <input type="hidden" id="videoId" name="videoId">
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="youtubeId" class="form-label">
-                                    ID ou URL YouTube <span class="text-danger">*</span>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">
+                                    Plateforme <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" class="form-control" id="youtubeId" name="youtubeId" required 
+                                <div class="btn-group w-100" role="group" aria-label="Platform selection">
+                                    <input type="radio" class="btn-check" name="platformType" id="platformVimeo" value="vimeo" checked>
+                                    <label class="btn btn-outline-primary" for="platformVimeo">
+                                        <i class="fab fa-vimeo-v me-2"></i>Vimeo
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="platformType" id="platformYoutube" value="youtube">
+                                    <label class="btn btn-outline-danger" for="platformYoutube">
+                                        <i class="fab fa-youtube me-2"></i>YouTube
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="videoIdInput" class="form-label">
+                                    <span id="platformLabel">YouTube</span> ID ou URL <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="videoIdInput" name="videoIdInput" required 
                                        placeholder="Ex: dQw4w9WgXcQ">
-                                <div class="form-text">L'ID ou l'URL complète YouTube</div>
+                                <div class="form-text" id="platformHelp">L'ID ou l'URL complète</div>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -336,7 +373,7 @@
 
                         <div id="videoPreview" class="mt-2 d-none">
                             <div class="alert alert-info">
-                                <strong><i class="fab fa-youtube me-2"></i>Aperçu:</strong>
+                                <strong><i id="previewIcon" class="fab fa-youtube me-2"></i>Aperçu:</strong>
                                 <div class="ratio ratio-16x9 mt-2">
                                     <iframe id="videoPreviewFrame" src="" frameborder="0" allowfullscreen></iframe>
                                 </div>

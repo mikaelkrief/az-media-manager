@@ -76,17 +76,25 @@ const API_BASE = 'http://localhost:3000'; // Change to your Azure App Service UR
   // Render video player and info
   // ========================================
   function renderVideo(video) {
-    // Create YouTube iframe (privacy-enhanced mode)
-    // Format identique à l'embed YouTube officiel
+    const platformType = video.platformType || 'youtube';
+    const videoId = video.videoId || video.youtubeId;
+    
+    // Create iframe (privacy-enhanced mode)
     const iframe = document.createElement('iframe');
-    iframe.src = `https://www.youtube-nocookie.com/embed/${video.youtubeId}?rel=0&modestbranding=1`;
-    iframe.title = video.title || 'YouTube video player';
+    iframe.title = video.title || 'Video player';
     iframe.width = '560';
     iframe.height = '315';
     iframe.frameBorder = '0';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
     iframe.allowFullscreen = true;
+    
+    // Set src based on platform
+    if (platformType === 'youtube') {
+      iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+    } else if (platformType === 'vimeo') {
+      iframe.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+    }
     
     videoContainerEl.innerHTML = '';
     videoContainerEl.appendChild(iframe);
