@@ -1,37 +1,52 @@
 const express = require('express');
 const youtubeService = require('../youtubeService');
-const ytdl = require('@distube/ytdl-core');
+const fetch = require('node-fetch');
 
 const router = express.Router();
 
-// GET /api/youtube-videos/info/:youtubeId - Get video info from YouTube (sans API key)
+// GET /api/youtube-videos/info/:youtubeId - Get video info from YouTube Data API v3
 router.get('/info/:youtubeId', async (req, res) => {
   try {
     const { youtubeId } = req.params;
+    const apiKey = process.env.YOUTUBE_API_KEY;
     
-    // Construire l'URL YouTube
-    const videoUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
-    
-    // Vérifier si l'URL est valide
-    if (!ytdl.validateURL(videoUrl)) {
-      return res.json({
+    // Vérifier que la clé API est configurée
+    if (!apiKey) {
+      return res.status(500).json({
         success: false,
-        error: 'Invalid YouTube video ID'
+        error: 'YouTube API key not configured. Set YOUTUBE_API_KEY in environment variables.'
       });
     }
     
-    // Récupérer les informations de la vidéo
-    const info = await ytdl.getInfo(videoUrl);
-    const videoDetails = info.videoDetails;
+    // Appeler l'API YouTube Data v3
+    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${youtubeId}&key=${apiKey}`;
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Vérifier si la vidéo existe
+    if (!data.items || data.items.length === 0) {
+      return res.json({
+        success: false,
+        error: 'Video not found or is private'
+      });
+    }
+    
+    const video = data.items[0];
+    const snippet = video.snippet;
     
     res.json({
       success: true,
       info: {
-        title: videoDetails.title,
-        description: videoDetails.description,
-        thumbnails: videoDetails.thumbnails,
-        channelTitle: videoDetails.author.name,
-        duration: videoDetails.lengthSeconds
+        title: snippet.title,
+        description: snippet.description,
+        thumbnails: snippet.thumbnails,
+        channelTitle: snippet.channelTitle,
+        publishedAt: snippet.publishedAt
       }
     });
   } catch (error) {

@@ -67,6 +67,9 @@ AZURE_UPLOAD_FOLDER=pdf
 VIDEO_CATALOG_BLOB=meta/catalog.videos.json
 YOUTUBE_CATALOG_BLOB=meta/catalog.youtube.json  # Legacy support
 
+# YouTube API Configuration
+YOUTUBE_API_KEY=your-youtube-api-key
+
 # Player Configuration (for external hosting)
 PLAYER_BASE_URL=https://your-static-player-site.azurestaticapps.net
 

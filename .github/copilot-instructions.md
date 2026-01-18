@@ -41,6 +41,7 @@ AZURE_BLOB_CONTAINER_NAME=medias
 AZURE_UPLOAD_FOLDER=pdf  # Subfolder for PDFs
 YOUTUBE_CATALOG_BLOB=meta/catalog.youtube.json  # Legacy name
 VIDEO_CATALOG_BLOB=meta/catalog.videos.json     # Preferred (supports YouTube & Vimeo)
+YOUTUBE_API_KEY=your-youtube-api-key            # YouTube Data API v3 key (required for auto-fetch)
 PLAYER_BASE_URL=https://player.example.com       # External player URL (optional)
 ALLOWED_ORIGIN=https://site.com,https://other.com  # For static player CORS
 ```

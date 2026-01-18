@@ -131,6 +131,11 @@ stages:
               "name": "ALLOWED_ORIGIN",
               "value": "$(ALLOWED_ORIGIN)",
               "slotSetting": false
+            },
+            {
+              "name": "YOUTUBE_API_KEY",
+              "value": "$(YOUTUBE_API_KEY)",
+              "slotSetting": false
             }
           ]
       displayName: 'Configure Web App Settings (Merge Mode)'
