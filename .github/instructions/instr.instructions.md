@@ -26,6 +26,7 @@ Cette application doit pouvoir:
 - permettre de supprimer un fichier uploadé dans ce container
 - possibilité d'exporter en xls la liste des fichiers affichés
 
+
 **UI:**
 - utilise le theme Bootstrap (derniere version)
 - pour la liste des fichiers utilise le composant Datatables (derniere version) avec filtre sur les colonnes
@@ -37,4 +38,11 @@ Cette application doit pouvoir:
 
  **Deploiement:**
  Pour le pipeline Azure Devops, utilise le meme que celui ci : https://raw.githubusercontent.com/mikaelkrief/az-webapp-manager/refs/heads/main/azure-pipelines.yml
+
+
+## Documentation et Tests
+
+Les documents sont à placer dans le dossier `docs/`.
+Les testss automatisés sont à placer dans le dossier `tests/`.
+
 

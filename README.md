@@ -9,10 +9,20 @@
 
 ## ✨ Fonctionnalités
 
+### Gestion de fichiers PDF
 - 📄 **Gestion de fichiers PDF** : Upload, visualisation, suppression avec drag & drop
 - 📊 **Interface DataTables** : Pagination, recherche, tri et export Excel
 - 🔗 **Liens directs** : Génération d'URLs avec copie presse-papiers
 - 📅 **Métadonnées** : Affichage de la date de dernière modification
+
+### Gestion de vidéos (YouTube & Vimeo)
+- 🎥 **Multi-plateformes** : Support de YouTube et Vimeo dans la même interface
+- 📝 **Métadonnées complètes** : Titre, description, tags, statut de publication
+- 🔐 **Contrôle de concurrence** : Système ETag pour éviter les conflits d'édition
+- 🎬 **Player statique** : Lecteur vidéo embeddé (déployable sur Azure Static Web Apps)
+- 🔒 **Mode privacy-enhanced** : Utilisation de youtube-nocookie.com et Vimeo DNT
+
+### Sécurité et déploiement
 - 🔒 **Sécurité** : Authentification via Service Principal Azure
 - 🚀 **Déploiement** : Pipeline Azure DevOps pour Azure WebApp Linux
 - 📱 **Responsive** : Interface adaptative Bootstrap 5
@@ -52,6 +62,19 @@ AZURE_STORAGE_ACCOUNT_NAME=dataakor
 AZURE_STORAGE_ACCOUNT_KEY=your-storage-account-access-key
 AZURE_BLOB_CONTAINER_NAME=medias
 AZURE_UPLOAD_FOLDER=pdf
+
+# Video Catalog Configuration (YouTube & Vimeo)
+VIDEO_CATALOG_BLOB=meta/catalog.videos.json
+YOUTUBE_CATALOG_BLOB=meta/catalog.youtube.json  # Legacy support
+
+# YouTube API Configuration
+YOUTUBE_API_KEY=your-youtube-api-key
+
+# Player Configuration (for external hosting)
+PLAYER_BASE_URL=https://your-static-player-site.azurestaticapps.net
+
+# CORS Configuration (for static player)
+ALLOWED_ORIGIN=https://your-static-site.z6.web.core.windows.net,https://another-domain.com
 
 # Server Configuration
 PORT=3000
@@ -195,12 +218,22 @@ Ce projet est sous **licence MIT** - voir [LICENSE](LICENSE) pour les détails.
 
 ## 🔌 API Endpoints
 
-### 📄 Gestion des fichiers
+### 📄 Gestion des fichiers PDF
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
 | `GET` | `/api/blobs` | Liste tous les fichiers avec métadonnées |
 | `POST` | `/api/blobs` | Upload un fichier PDF (max 50MB) |
 | `DELETE` | `/api/blobs/:blobName` | Supprime un fichier du storage |
+
+### 🎥 Gestion des vidéos YouTube
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/api/youtube-videos` | Liste toutes les vidéos (filtres: ?isPublished=true&tags=promo) |
+| `GET` | `/api/youtube-videos/:id` | Récupère une vidéo par ID |
+| `POST` | `/api/youtube-videos` | Crée une nouvelle référence vidéo |
+| `PUT` | `/api/youtube-videos/:id` | Met à jour une vidéo |
+| `PATCH` | `/api/youtube-videos/:id/publish` | Change le statut de publication |
+| `DELETE` | `/api/youtube-videos/:id` | Supprime une référence vidéo |
 
 ### 🔧 Système
 | Méthode | Endpoint | Description |
@@ -208,7 +241,9 @@ Ce projet est sous **licence MIT** - voir [LICENSE](LICENSE) pour les détails.
 | `GET` | `/health` | Health check de l'application |
 | `GET` | `/` | Interface web principale |
 
-### 📊 Exemple de réponse API
+### 📊 Exemples de réponses API
+
+#### Liste des fichiers PDF
 ```json
 {
   "success": true,
@@ -223,6 +258,35 @@ Ce projet est sous **licence MIT** - voir [LICENSE](LICENSE) pour les détails.
 }
 ```
 
+#### Création d'une vidéo
+**Request:**
+```json
+{
+  "youtubeId": "dQw4w9WgXcQ",
+  "title": "Promo Janvier",
+  "description": "Découvrez nos promotions du mois",
+  "tags": ["promo", "janvier"],
+  "isPublished": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Video created successfully",
+  "video": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "youtubeId": "dQw4w9WgXcQ",
+    "title": "Promo Janvier",
+    "description": "Découvrez nos promotions du mois",
+    "tags": ["promo", "janvier"],
+    "createdAt": "2025-01-02T10:30:00.000Z",
+    "isPublished": true
+  }
+}
+```
+
 ## 📁 Structure du projet
 
 ```
@@ -233,10 +297,18 @@ mhl-media-manager/
 │       └── ⚡ app.js             # Logique frontend (MediaManager)
 ├── 📂 src/                      # Backend (API et services)
 │   ├── 📂 routes/
-│   │   └── 🛤️ blobRoutes.js      # Routes API REST
-│   └── ☁️ azureBlobService.js    # Service Azure Blob Storage
+│   │   ├── 🛤️ blobRoutes.js      # Routes API REST pour PDF
+│   │   └── 🎥 youtubeRoutes.js   # Routes API REST pour vidéos
+│   ├── ☁️ azureBlobService.js    # Service Azure Blob Storage (PDF)
+│   └── 🎬 youtubeService.js      # Service YouTube Catalog (vidéos)
+├── 📂 static-player/            # Player vidéo statique (déployable séparément)
+│   ├── 🌐 player.html           # Interface du lecteur
+│   ├── ⚡ player.js              # Logique du player
+│   ├── 🎨 styles.css            # Styles du player
+│   └── 📖 README.md             # Documentation du player
 ├── 📂 .github/
-│   └── 📂 instructions/         # Documentation technique
+│   ├── 📂 instructions/         # Documentation technique
+│   └── 📂 prompts/              # Prompts pour développement
 ├── 🔧 server.js                 # Serveur Express principal
 ├── 📦 package.json              # Dépendances et scripts npm
 ├── 🚀 azure-pipelines.yml       # Pipeline CI/CD Azure DevOps

@@ -1,15 +1,35 @@
 class MediaManager {
     constructor() {
         this.dataTable = null;
+        this.videosDataTable = null;
         this.currentFile = null;
+        this.currentVideo = null;
         this.authToken = null; // Token Easy Auth (Entra ID) mis en cache
+        this.playerBaseUrl = null; // URL du player statique
         this.init();
     }
 
     init() {
+        this.loadConfig();
         this.initializeDataTable();
+        this.initializeVideosDataTable();
         this.setupEventListeners();
+        this.setupVideoEventListeners();
         this.loadFiles();
+        this.loadVideos();
+    }
+
+    async loadConfig() {
+        try {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            this.playerBaseUrl = config.playerBaseUrl;
+            console.log('Player base URL:', this.playerBaseUrl);
+        } catch (error) {
+            console.error('Error loading config:', error);
+            // Fallback to current origin
+            this.playerBaseUrl = `${window.location.origin}/player`;
+        }
     }
 
     // Récupère et met en cache le token d'authentification Easy Auth (/.auth/me)
@@ -127,8 +147,8 @@ class MediaManager {
                 buttons: [
                     {
                         extend: 'excelHtml5',
-                        text: '<i class="fas fa-file-excel me-2"></i>Exporter Excel',
-                        className: 'btn btn-success btn-sm',
+                        text: '<i class="fas fa-file-excel"></i> Exporter Excel',
+                        className: 'ui green button',
                         title: 'Liste des fichiers - ' + new Date().toLocaleDateString('fr-FR'),
                         exportOptions: {
                             columns: [0, 1, 2] // Nom, Dernière modification, URL (cachée)
@@ -490,6 +510,679 @@ class MediaManager {
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // ========================================
+    // YouTube Videos Management
+    // ========================================
+
+    initializeVideosDataTable() {
+        if (typeof $.fn.DataTable === 'undefined') {
+            console.error('DataTables not loaded for videos table');
+            setTimeout(() => this.initializeVideosDataTable(), 500);
+            return;
+        }
+
+        try {
+            this.videosDataTable = $('#videosTable').DataTable({
+                data: [],
+                columns: [
+                    { 
+                        data: 'title',
+                        title: 'Titre',
+                        render: function(data, type, row) {
+                            if (type === 'export') return data;
+                            // Afficher l'icône selon la plateforme
+                            const icon = row.platformType === 'vimeo' 
+                                ? '<i class="fab fa-vimeo-v text-primary me-2"></i>'
+                                : '<i class="fab fa-youtube text-danger me-2"></i>';
+                            return icon + data;
+                        }
+                    },
+                    { 
+                        data: 'videoId',
+                        title: 'Video ID',
+                        render: function(data, type, row) {
+                            if (type === 'export') return (row.platformType || 'youtube').toUpperCase() + ': ' + (data || row.youtubeId);
+                            const platform = (row.platformType || 'youtube').toUpperCase();
+                            const id = data || row.youtubeId;
+                            return '<span class="badge bg-secondary me-1">' + platform + '</span><code>' + id + '</code>';
+                        }
+                    },
+                    { 
+                        data: 'tags',
+                        title: 'Tags',
+                        render: function(data, type, row) {
+                            if (type === 'export') return data ? data.join(', ') : '';
+                            if (!data || data.length === 0) return '<span class="text-muted">-</span>';
+                            return data.map(tag => 
+                                '<span class="badge bg-info tag-badge">' + tag + '</span>'
+                            ).join(' ');
+                        }
+                    },
+                    { 
+                        data: 'createdAt',
+                        title: 'Date de création',
+                        render: function(data, type, row) {
+                            if (!data) return '-';
+                            var date = new Date(data);
+                            if (type === 'export') {
+                                return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR');
+                            }
+                            return date.toLocaleDateString('fr-FR');
+                        }
+                    },
+                    { 
+                        data: 'isPublished',
+                        title: 'Statut',
+                        render: function(data, type, row) {
+                            if (type === 'export') return data ? 'Publié' : 'Non publié';
+                            if (data) {
+                                return '<span class="badge bg-success"><i class="fas fa-eye me-1"></i>Publié</span>';
+                            } else {
+                                return '<span class="badge bg-secondary"><i class="fas fa-eye-slash me-1"></i>Non publié</span>';
+                            }
+                        }
+                    },
+                    { 
+                        data: null,
+                        title: 'Actions',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return '<div class="btn-group btn-group-sm" role="group">' +
+                                   '<button class="btn btn-outline-primary" onclick="mediaManager.viewVideo(\'' + row.id + '\')" title="Voir détails">' +
+                                   '<i class="fas fa-eye"></i></button>' +
+                                   '<button class="btn btn-outline-warning" onclick="mediaManager.editVideo(\'' + row.id + '\')" title="Modifier">' +
+                                   '<i class="fas fa-edit"></i></button>' +
+                                   '<button class="btn btn-outline-' + (row.isPublished ? 'secondary' : 'success') + '" ' +
+                                   'onclick="mediaManager.togglePublish(\'' + row.id + '\', ' + !row.isPublished + ')" title="' + 
+                                   (row.isPublished ? 'Dépublier' : 'Publier') + '">' +
+                                   '<i class="fas fa-' + (row.isPublished ? 'eye-slash' : 'eye') + '"></i></button>' +
+                                   '<button class="btn btn-outline-danger" onclick="mediaManager.confirmDeleteVideo(\'' + row.id + '\', \'' + 
+                                   row.title.replace(/'/g, "\\'") + '\')" title="Supprimer">' +
+                                   '<i class="fas fa-trash"></i></button>' +
+                                   '</div>';
+                        }
+                    }
+                ],
+                dom: 'Blfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: '<i class="fas fa-file-excel"></i> Exporter Excel',
+                        className: 'ui green button',
+                        title: 'Liste des vidéos - ' + new Date().toLocaleDateString('fr-FR'),
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4]
+                        }
+                    }
+                ],
+                lengthMenu: [[25, 50, 100, 200, -1], [25, 50, 100, 200, "Toutes"]],
+                responsive: true,
+                language: {
+                    "sEmptyTable": "Aucune vidéo disponible",
+                    "sInfo": "Affichage de _START_ à _END_ sur _TOTAL_ vidéos",
+                    "sInfoEmpty": "Affichage de 0 à 0 sur 0 vidéo",
+                    "sInfoFiltered": "(filtré à partir de _MAX_ vidéos au total)",
+                    "sInfoThousands": " ",
+                    "sLengthMenu": "Afficher _MENU_ vidéos",
+                    "sLoadingRecords": "Chargement...",
+                    "sProcessing": "Traitement...",
+                    "sSearch": "Rechercher :",
+                    "sZeroRecords": "Aucune vidéo correspondante trouvée",
+                    "oPaginate": {
+                        "sFirst": "Premier",
+                        "sLast": "Dernier",
+                        "sNext": "Suivant",
+                        "sPrevious": "Précédent"
+                    },
+                    "oAria": {
+                        "sSortAscending": ": activer pour trier la colonne par ordre croissant",
+                        "sSortDescending": ": activer pour trier la colonne par ordre décroissant"
+                    },
+                    "select": {
+                        "rows": {
+                            "_": "%d lignes sélectionnées",
+                            "0": "Aucune ligne sélectionnée",
+                            "1": "1 ligne sélectionnée"
+                        }
+                    }
+                },
+                pageLength: 200,
+                order: [[3, 'desc']] // Sort by creation date desc
+            });
+            
+            console.log('Videos DataTable initialized successfully');
+        } catch (error) {
+            console.error('Error initializing Videos DataTable:', error);
+        }
+    }
+
+    setupVideoEventListeners() {
+        // Platform type selection
+        const platformRadios = document.querySelectorAll('input[name="platformType"]');
+        platformRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.updatePlatformUI(e.target.value);
+                // Clear and hide preview when switching platforms
+                document.getElementById('videoPreview').classList.add('d-none');
+                document.getElementById('videoPreviewFrame').src = '';
+            });
+        });
+
+        // YouTube/Vimeo ID/URL preview avec auto-fill
+        const videoIdInput = document.getElementById('videoIdInput');
+        if (videoIdInput) {
+            let debounceTimer;
+            videoIdInput.addEventListener('input', (e) => {
+                const platformType = document.querySelector('input[name="platformType"]:checked').value;
+                const extractedId = platformType === 'youtube' 
+                    ? this.extractYoutubeId(e.target.value)
+                    : this.extractVimeoId(e.target.value);
+                
+                if (extractedId) {
+                    this.previewVideo(extractedId, platformType);
+                    
+                    // Debounce pour ne pas faire trop d'appels API (uniquement pour YouTube)
+                    if (platformType === 'youtube') {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(() => {
+                            this.fetchYoutubeInfo(extractedId);
+                        }, 1000); // Attendre 1 seconde après la dernière frappe
+                    }
+                }
+            });
+        }
+
+        // Save video button
+        const saveVideoBtn = document.getElementById('saveVideoBtn');
+        if (saveVideoBtn) {
+            saveVideoBtn.addEventListener('click', () => this.saveVideo());
+        }
+
+        // Confirm delete video button
+        const confirmDeleteVideoBtn = document.getElementById('confirmDeleteVideoBtn');
+        if (confirmDeleteVideoBtn) {
+            confirmDeleteVideoBtn.addEventListener('click', () => this.deleteVideo());
+        }
+
+        // Copy player URL button
+        const copyPlayerUrlBtn = document.getElementById('copyPlayerUrlBtn');
+        if (copyPlayerUrlBtn) {
+            copyPlayerUrlBtn.addEventListener('click', () => {
+                const url = document.getElementById('videoPlayerUrl').value;
+                this.copyUrl(url);
+            });
+        }
+
+        // Reset form on modal close
+        const videoModal = document.getElementById('videoModal');
+        if (videoModal) {
+            videoModal.addEventListener('hidden.bs.modal', () => {
+                this.resetVideoForm();
+            });
+        }
+
+        // Load videos when switching to videos tab
+        const videosTab = document.getElementById('videos-tab');
+        if (videosTab) {
+            videosTab.addEventListener('shown.bs.tab', () => {
+                this.loadVideos();
+            });
+        }
+
+        // Platform filter buttons
+        const platformFilters = document.querySelectorAll('input[name="platformFilter"]');
+        platformFilters.forEach(filter => {
+            filter.addEventListener('change', (e) => {
+                this.filterVideosByPlatform(e.target.value);
+            });
+        });
+    }
+
+    filterVideosByPlatform(platform) {
+        if (!this.videosDataTable) return;
+
+        if (platform === 'all') {
+            // Afficher toutes les vidéos
+            this.videosDataTable.column(1).search('').draw();
+        } else {
+            // Filtrer par plateforme (colonne 1 = Video ID avec badge de plateforme)
+            this.videosDataTable.column(1).search(platform.toUpperCase(), true, false).draw();
+        }
+    }
+
+    updatePlatformUI(platformType) {
+        const platformLabel = document.getElementById('platformLabel');
+        const platformHelp = document.getElementById('platformHelp');
+        const videoIdInput = document.getElementById('videoIdInput');
+        const modalIcon = document.getElementById('videoModalIcon');
+        const previewIcon = document.getElementById('previewIcon');
+        
+        if (platformType === 'vimeo') {
+            platformLabel.textContent = 'Vimeo';
+            platformHelp.textContent = "L'ID ou l'URL complète Vimeo";
+            videoIdInput.placeholder = 'Ex: 123456789 ou https://vimeo.com/...';
+            modalIcon.className = 'fab fa-vimeo-v text-primary me-2';
+            previewIcon.className = 'fab fa-vimeo-v me-2';
+        } else if (platformType === 'youtube') {
+            platformLabel.textContent = 'YouTube';
+            platformHelp.textContent = "L'ID ou l'URL complète YouTube";
+            videoIdInput.placeholder = 'Ex: dQw4w9WgXcQ ou https://youtube.com/watch?v=...';
+            modalIcon.className = 'fab fa-youtube text-danger me-2';
+            previewIcon.className = 'fab fa-youtube me-2';
+        }
+    }
+
+    previewVideo(videoId, platformType) {
+        const preview = document.getElementById('videoPreview');
+        const frame = document.getElementById('videoPreviewFrame');
+        
+        if (videoId && ((platformType === 'youtube' && videoId.length >= 11) || (platformType === 'vimeo' && videoId.length > 0))) {
+            // Configuration complète de l'iframe
+            frame.width = '560';
+            frame.height = '315';
+            frame.frameBorder = '0';
+            frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+            frame.referrerPolicy = 'strict-origin-when-cross-origin';
+            frame.allowFullscreen = true;
+            
+            // Définir le src selon la plateforme
+            if (platformType === 'youtube') {
+                frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+            } else if (platformType === 'vimeo') {
+                frame.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+            }
+            
+            preview.classList.remove('d-none');
+        } else {
+            preview.classList.add('d-none');
+            frame.src = '';
+        }
+    }
+
+    /**
+     * Extrait l'ID YouTube depuis une URL ou retourne l'ID si déjà fourni
+     * @param {string} input - URL YouTube ou ID
+     * @returns {string|null} - ID YouTube ou null si invalide
+     */
+    extractYoutubeId(input) {
+        if (!input) return null;
+        
+        // Si c'est déjà un ID (11 caractères alphanumériques)
+        if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
+            return input;
+        }
+        
+        // Patterns d'URL YouTube
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+        ];
+        
+        for (const pattern of patterns) {
+            const match = input.match(pattern);
+            if (match && match[1]) {
+                return match[1];
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Récupère les informations de la vidéo depuis YouTube (titre, description)
+     * @param {string} youtubeId - ID YouTube
+     */
+    async fetchYoutubeInfo(youtubeId) {
+        try {
+            // Ne pas écraser si les champs sont déjà remplis (en mode édition)
+            const titleInput = document.getElementById('videoTitle');
+            const descriptionInput = document.getElementById('videoDescription');
+            const videoIdField = document.getElementById('videoId');
+            
+            // Si on est en mode édition, ne pas auto-remplir
+            if (videoIdField.value) {
+                return;
+            }
+            
+            // Afficher un indicateur de chargement
+            const originalTitlePlaceholder = titleInput.placeholder;
+            const originalDescPlaceholder = descriptionInput.placeholder;
+            titleInput.placeholder = 'Chargement...';
+            descriptionInput.placeholder = 'Chargement...';
+            
+            const response = await fetch(`/api/youtube-videos/info/${youtubeId}`);
+            const result = await response.json();
+            
+            if (result.success && result.info) {
+                // Pré-remplir uniquement si les champs sont vides
+                if (!titleInput.value) {
+                    titleInput.value = result.info.title;
+                }
+                if (!descriptionInput.value) {
+                    descriptionInput.value = result.info.description;
+                }
+                
+                // Notification succès
+                this.showAlert('Informations récupérées depuis YouTube !', 'success', 2000);
+            } else {
+                console.warn('Could not fetch YouTube info:', result.error);
+            }
+            
+            // Restaurer les placeholders
+            titleInput.placeholder = originalTitlePlaceholder;
+            descriptionInput.placeholder = originalDescPlaceholder;
+            
+        } catch (error) {
+            console.error('Error fetching YouTube info:', error);
+            // Pas d'alerte d'erreur pour ne pas perturber l'utilisateur
+        }
+    }
+
+    async loadVideos() {
+        try {
+            const response = await fetch('/api/youtube-videos', await this.addAuth());
+            const result = await response.json();
+
+            if (result.success) {
+                if (this.videosDataTable) {
+                    this.videosDataTable.clear();
+                    if (Array.isArray(result.videos)) {
+                        this.videosDataTable.rows.add(result.videos).draw();
+                        console.log(`${result.videos.length} videos loaded`);
+                    }
+                }
+            } else {
+                throw new Error(result.error || 'Error loading videos');
+            }
+        } catch (error) {
+            console.error('Load videos error:', error);
+            this.showAlert(`Erreur lors du chargement des vidéos : ${error.message}`, 'danger');
+        }
+    }
+
+    async saveVideo() {
+        const form = document.getElementById('videoForm');
+        const videoId = document.getElementById('videoId').value;
+        const isEdit = !!videoId;
+
+        // Get platform type
+        const platformType = document.querySelector('input[name="platformType"]:checked').value;
+        
+        // Validation
+        let videoIdInput = document.getElementById('videoIdInput').value.trim();
+        const title = document.getElementById('videoTitle').value.trim();
+
+        if (!videoIdInput || !title) {
+            this.showAlert('ID/URL de la vidéo et titre sont obligatoires', 'warning');
+            return;
+        }
+
+        // Extraire l'ID de la vidéo selon la plateforme
+        const extractedVideoId = platformType === 'youtube' 
+            ? this.extractYoutubeId(videoIdInput)
+            : this.extractVimeoId(videoIdInput);
+        
+        if (!extractedVideoId) {
+            this.showAlert(`ID ou URL ${platformType.toUpperCase()} invalide`, 'warning');
+            return;
+        }
+
+        // Prepare data
+        const videoData = {
+            platformType: platformType,
+            videoId: extractedVideoId,
+            youtubeId: platformType === 'youtube' ? extractedVideoId : undefined,  // Rétrocompatibilité
+            title: title,
+            description: document.getElementById('videoDescription').value.trim(),
+            tags: document.getElementById('videoTags').value
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t.length > 0),
+            isPublished: document.getElementById('videoPublished').checked
+        };
+
+        const saveBtn = document.getElementById('saveVideoBtn');
+        const originalText = saveBtn.innerHTML;
+        
+        try {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...';
+
+            const url = isEdit 
+                ? `/api/youtube-videos/${videoId}`
+                : '/api/youtube-videos';
+            
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const response = await fetch(url, await this.addAuth({
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(videoData)
+            }));
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showAlert(
+                    isEdit ? 'Vidéo mise à jour avec succès !' : 'Vidéo ajoutée avec succès !',
+                    'success'
+                );
+                this.loadVideos();
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('videoModal'));
+                if (modal) modal.hide();
+            } else {
+                throw new Error(result.error || 'Erreur lors de l\'enregistrement');
+            }
+        } catch (error) {
+            console.error('Save video error:', error);
+            this.showAlert(`Erreur : ${error.message}`, 'danger');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+    }
+
+    editVideo(id) {
+        fetch(`/api/youtube-videos/${id}`, { method: 'GET' })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success && result.video) {
+                    const video = result.video;
+                    
+                    // Fill form
+                    document.getElementById('videoId').value = video.id;
+                    
+                    // Set platform type
+                    const platformType = video.platformType || 'youtube';
+                    document.getElementById(platformType === 'youtube' ? 'platformYoutube' : 'platformVimeo').checked = true;
+                    this.updatePlatformUI(platformType);
+                    
+                    // Set video ID
+                    document.getElementById('videoIdInput').value = video.videoId || video.youtubeId;
+                    document.getElementById('videoTitle').value = video.title;
+                    document.getElementById('videoDescription').value = video.description || '';
+                    document.getElementById('videoTags').value = video.tags ? video.tags.join(', ') : '';
+                    document.getElementById('videoPublished').checked = video.isPublished;
+                    
+                    // Update modal title
+                    document.getElementById('videoModalTitle').textContent = 'Modifier la vidéo';
+                    
+                    // Show preview
+                    this.previewVideo(video.videoId || video.youtubeId, platformType);
+                    
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('videoModal'));
+                    modal.show();
+                } else {
+                    throw new Error(result.error || 'Video not found');
+                }
+            })
+            .catch(error => {
+                console.error('Edit video error:', error);
+                this.showAlert(`Erreur : ${error.message}`, 'danger');
+            });
+    }
+
+    async viewVideo(id) {
+        try {
+            const response = await fetch(`/api/youtube-videos/${id}`, await this.addAuth());
+            const result = await response.json();
+
+            if (result.success && result.video) {
+                const video = result.video;
+                
+                // Set video details avec iframe complète
+                // IMPORTANT: Définir tous les attributs AVANT le src
+                const frame = document.getElementById('videoDetailsFrame');
+                frame.width = '560';
+                frame.height = '315';
+                frame.frameBorder = '0';
+                frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+                frame.referrerPolicy = 'strict-origin-when-cross-origin';
+                frame.allowFullscreen = true;
+                
+                // Définir le src selon la plateforme
+                const platformType = video.platformType || 'youtube';
+                const videoId = video.videoId || video.youtubeId;
+                
+                if (platformType === 'youtube') {
+                    frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+                } else if (platformType === 'vimeo') {
+                    frame.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+                }
+                
+                document.getElementById('videoDetailsTitle').textContent = video.title;
+                document.getElementById('videoDetailsYoutubeId').textContent = 
+                    `${platformType.toUpperCase()} ID: ${videoId}`;
+                
+                // Tags
+                const tagsContainer = document.getElementById('videoDetailsTags');
+                if (video.tags && video.tags.length > 0) {
+                    tagsContainer.innerHTML = video.tags.map(tag => 
+                        `<span class="badge bg-info tag-badge">${tag}</span>`
+                    ).join(' ');
+                } else {
+                    tagsContainer.innerHTML = '<span class="text-muted">Aucun tag</span>';
+                }
+                
+                // Description
+                document.getElementById('videoDetailsDescription').textContent = 
+                    video.description || 'Aucune description';
+                
+                // Date
+                const date = new Date(video.createdAt);
+                document.getElementById('videoDetailsDate').textContent = 
+                    `Créée le ${date.toLocaleDateString('fr-FR')}`;
+                
+                // Status
+                const statusSpan = document.getElementById('videoDetailsStatus');
+                if (video.isPublished) {
+                    statusSpan.innerHTML = '<span class="badge bg-success"><i class="fas fa-eye me-1"></i>Publié</span>';
+                } else {
+                    statusSpan.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-eye-slash me-1"></i>Non publié</span>';
+                }
+                
+                // Player URL (you'll need to configure this based on your static player deployment)
+                const playerUrl = `${this.playerBaseUrl}/player.html?id=${video.id}`;
+                document.getElementById('videoPlayerUrl').value = playerUrl;
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('videoDetailsModal'));
+                modal.show();
+            } else {
+                throw new Error(result.error || 'Video not found');
+            }
+        } catch (error) {
+            console.error('View video error:', error);
+            this.showAlert(`Erreur : ${error.message}`, 'danger');
+        }
+    }
+
+    async togglePublish(id, newStatus) {
+        try {
+            const response = await fetch(`/api/youtube-videos/${id}/publish`, await this.addAuth({
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ isPublished: newStatus })
+            }));
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showAlert(
+                    newStatus ? 'Vidéo publiée avec succès !' : 'Vidéo dépubliée avec succès !',
+                    'success'
+                );
+                this.loadVideos();
+            } else {
+                throw new Error(result.error || 'Error toggling publish status');
+            }
+        } catch (error) {
+            console.error('Toggle publish error:', error);
+            this.showAlert(`Erreur : ${error.message}`, 'danger');
+        }
+    }
+
+    confirmDeleteVideo(id, title) {
+        this.currentVideo = id;
+        document.getElementById('deleteVideoTitle').textContent = title;
+        
+        const modal = new bootstrap.Modal(document.getElementById('deleteVideoModal'));
+        modal.show();
+    }
+
+    async deleteVideo() {
+        if (!this.currentVideo) return;
+
+        const confirmBtn = document.getElementById('confirmDeleteVideoBtn');
+        const originalText = confirmBtn.innerHTML;
+        
+        try {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Suppression...';
+
+            const response = await fetch(`/api/youtube-videos/${this.currentVideo}`, await this.addAuth({
+                method: 'DELETE'
+            }));
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showAlert('Vidéo supprimée avec succès !', 'success');
+                this.loadVideos();
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteVideoModal'));
+                if (modal) modal.hide();
+            } else {
+                throw new Error(result.error || 'Error deleting video');
+            }
+        } catch (error) {
+            console.error('Delete video error:', error);
+            this.showAlert(`Erreur : ${error.message}`, 'danger');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalText;
+            this.currentVideo = null;
+        }
+    }
+
+    resetVideoForm() {
+        document.getElementById('videoForm').reset();
+        document.getElementById('videoId').value = '';
+        document.getElementById('videoModalTitle').textContent = 'Ajouter une vidéo';
+        document.getElementById('platformVimeo').checked = true;
+        this.updatePlatformUI('vimeo');
+        document.getElementById('videoPreview').classList.add('d-none');
+        document.getElementById('videoPreviewFrame').src = '';
     }
 }
 

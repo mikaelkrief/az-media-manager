@@ -14,6 +14,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const blobRoutes = require('./src/routes/blobRoutes');
+const youtubeRoutes = require('./src/routes/youtubeRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,8 +33,34 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration
-app.use(cors());
+// CORS configuration - Allow static player domains
+const allowedOrigins = process.env.ALLOWED_ORIGIN 
+  ? process.env.ALLOWED_ORIGIN.split(',').map(origin => origin.trim())
+  : [];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Postman, or same-origin)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Allow all origins if ALLOWED_ORIGIN is not configured
+    if (allowedOrigins.length === 0) {
+      return callback(null, true);
+    }
+    
+    // Check if origin is in the allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 
 // Parse JSON bodies
 app.use(express.json({ limit: '50mb' }));
@@ -49,9 +76,18 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/player', express.static(path.join(__dirname, 'static-player')));
 
 // API routes
 app.use('/api/blobs', blobRoutes);
+app.use('/api/youtube-videos', youtubeRoutes);
+
+// Configuration endpoint - expose player URL to frontend
+app.get('/api/config', (req, res) => {
+  res.json({
+    playerBaseUrl: process.env.PLAYER_BASE_URL || `${req.protocol}://${req.get('host')}/player`
+  });
+});
 
 // Endpoint de debug pour voir les headers reçus (temporaire)
 app.all('/api/debug-headers', (req, res) => {

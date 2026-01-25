@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Player</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Logo header -->
+  <header class="header">
+    <div class="logo-container">
+      <img src="logo.svg" alt="Logo" class="logo" id="logo">
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Loading state -->
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Chargement de la vidéo...</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="error" class="error" style="display: none;">
+      <div class="error-icon">⚠️</div>
+      <h2>Erreur</h2>
+      <p id="error-message"></p>
+      <button onclick="location.reload()" class="btn-retry">Réessayer</button>
+    </div>
+
+    <!-- Video player content -->
+    <div id="player-content" class="player-content" style="display: none;">
+      <!-- Video player -->
+      <div class="video-wrapper">
+        <div id="video-container"></div>
+      </div>
+
+      <!-- Video info -->
+      <div class="video-info">
+        <h1 id="video-title"></h1>
+        <div class="video-meta">
+          <span id="video-date" class="meta-item"></span>
+          <div id="video-tags" class="tags"></div>
+        </div>
+        <div class="video-description">
+          <p id="video-description"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="player.js"></script>
+</body>
+</html>
