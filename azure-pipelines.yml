@@ -165,7 +165,7 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           echo "Updating player.js with backend URL..."
-          sed -i "s|const API_BASE = '.*'|const API_BASE = 'https://$(BACKEND_URL)'|g" $(System.DefaultWorkingDirectory)/static-player-extracted/player.js
+          sed -i "s|const API_BASE = '.*'|const API_BASE = '$(BACKEND_URL)'|g" $(System.DefaultWorkingDirectory)/static-player-extracted/player.js
           
           echo "Uploading static player files to Azure Storage..."
           az storage blob upload-batch \
