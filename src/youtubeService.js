@@ -1,5 +1,6 @@
 const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob');
 const { v4: uuidv4 } = require('uuid');
+const azureBlobService = require('./azureBlobService');
 
 class YoutubeService {
   constructor() {
@@ -225,9 +226,10 @@ class YoutubeService {
     try {
       const newVideo = {
         id: uuidv4(),
-        platformType: videoData.platformType || 'youtube',  // 'youtube' ou 'vimeo'
-        videoId: videoData.videoId || videoData.youtubeId,  // ID universel
+        platformType: videoData.platformType || 'youtube',  // 'youtube', 'vimeo' ou 'upload'
+        videoId: videoData.videoId || videoData.youtubeId,  // ID universel (ou nom du blob pour 'upload')
         youtubeId: videoData.youtubeId,  // Rétrocompatibilité
+        fileUrl: videoData.fileUrl,  // URL du blob pour les vidéos MP4 uploadées
         title: videoData.title,
         description: videoData.description || '',
         tags: videoData.tags || [],
@@ -241,8 +243,12 @@ class YoutubeService {
       }
       
       // Validate platform type
-      if (!['youtube', 'vimeo'].includes(newVideo.platformType)) {
-        throw new Error('VALIDATION_ERROR: platformType must be youtube or vimeo');
+      if (!['youtube', 'vimeo', 'upload'].includes(newVideo.platformType)) {
+        throw new Error('VALIDATION_ERROR: platformType must be youtube, vimeo or upload');
+      }
+      
+      if (newVideo.platformType === 'upload' && !newVideo.fileUrl) {
+        throw new Error('VALIDATION_ERROR: fileUrl is required for uploaded videos');
       }
       
       // Update catalog atomically
@@ -316,6 +322,8 @@ class YoutubeService {
    */
   async deleteVideo(id) {
     try {
+      let deletedVideo = null;
+      
       await this.updateYoutubeCatalogAtomic(catalog => {
         const index = catalog.items.findIndex(v => v.id === id);
         
@@ -323,9 +331,19 @@ class YoutubeService {
           throw new Error('VIDEO_NOT_FOUND');
         }
         
+        deletedVideo = catalog.items[index];
         catalog.items.splice(index, 1);
         return catalog;
       });
+      
+      // Pour les vidéos uploadées, supprimer aussi le fichier MP4 dans le blob storage
+      if (deletedVideo && deletedVideo.platformType === 'upload' && deletedVideo.videoId) {
+        try {
+          await azureBlobService.deleteBlob(deletedVideo.videoId);
+        } catch (blobError) {
+          console.warn('Could not delete underlying video blob:', blobError.message);
+        }
+      }
       
       console.log('Video deleted successfully:', id);
     } catch (error) {

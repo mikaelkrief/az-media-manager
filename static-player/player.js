@@ -79,25 +79,33 @@ const API_BASE = 'http://localhost:3000'; // Change to your Azure App Service UR
     const platformType = video.platformType || 'youtube';
     const videoId = video.videoId || video.youtubeId;
     
-    // Create iframe (privacy-enhanced mode)
-    const iframe = document.createElement('iframe');
-    iframe.title = video.title || 'Video player';
-    iframe.width = '560';
-    iframe.height = '315';
-    iframe.frameBorder = '0';
-    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-    iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-    iframe.allowFullscreen = true;
-    
-    // Set src based on platform
-    if (platformType === 'youtube') {
-      iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
-    } else if (platformType === 'vimeo') {
-      iframe.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+    let mediaEl;
+    if (platformType === 'upload') {
+      // Fichier MP4 hébergé dans le blob storage : lecteur HTML5 natif
+      mediaEl = document.createElement('video');
+      mediaEl.controls = true;
+      mediaEl.src = video.fileUrl;
+    } else {
+      // Create iframe (privacy-enhanced mode)
+      mediaEl = document.createElement('iframe');
+      mediaEl.title = video.title || 'Video player';
+      mediaEl.width = '560';
+      mediaEl.height = '315';
+      mediaEl.frameBorder = '0';
+      mediaEl.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      mediaEl.referrerPolicy = 'strict-origin-when-cross-origin';
+      mediaEl.allowFullscreen = true;
+
+      // Set src based on platform
+      if (platformType === 'youtube') {
+        mediaEl.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+      } else if (platformType === 'vimeo') {
+        mediaEl.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+      }
     }
     
     videoContainerEl.innerHTML = '';
-    videoContainerEl.appendChild(iframe);
+    videoContainerEl.appendChild(mediaEl);
 
     // Set title
     videoTitleEl.textContent = video.title;

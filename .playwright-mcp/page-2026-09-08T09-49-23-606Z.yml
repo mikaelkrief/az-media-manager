@@ -1,0 +1,220 @@
+- generic [active] [ref=e1]:
+  - iframe [aria-hidden] [ref=e2]
+  - generic [ref=e7]:
+    - banner [ref=e8]:
+      - generic [ref=e10]:
+        - paragraph [ref=e11]: Découvrez la certification Cléa Management pour valoriser et reconnaitre les compétences de vos collaborateurs
+        - link "En savoir plus" [ref=e12] [cursor=pointer]:
+          - /url: /clea-management
+          - text: En savoir plus
+          - generic [aria-hidden] [ref=e13]: →
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - link [ref=e17] [cursor=pointer]:
+            - /url: /
+            - img "Akor Consulting" [ref=e18]
+          - button [ref=e20]
+    - main [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - button "Défiler vers la section suivante" [ref=e25] [cursor=pointer]
+          - generic [ref=e27]:
+            - generic [ref=e30]:
+              - heading "Révéler" [level=1] [ref=e31]
+              - generic [ref=e32]: et ouvrir de nouvelles perspectives
+              - generic [ref=e33]:
+                - paragraph [ref=e34]: Révéler les potentiels, l'unicité et le leadership de chacune et chacun.
+                - paragraph [ref=e35]: Révéler ce qui est déjà là, mais encore invisible.
+                - paragraph [ref=e36]: Révéler de nouvelles façons de voir, de comprendre et d'agir.
+            - generic [ref=e37]:
+              - button "Aller à l'écran 1" [ref=e38]
+              - button "Aller à l'écran 2" [ref=e39]
+              - button "Aller à l'écran 3" [ref=e40]
+              - button "Aller à l'écran 4" [ref=e41]
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - heading "Une combinaison unique d'expertises..." [level=2] [ref=e45]: Une combinaisonunique d'expertises...
+            - paragraph [ref=e46]: Parce que les transformations se jouent à plusieurs niveaux (organisations, équipes, individus), nous conjuguons nos expertises pour accompagner chaque situation dans toute sa complexité.
+          - generic [ref=e47]:
+            - link [ref=e48] [cursor=pointer]:
+              - /url: /conseil-transformation
+              - img "Transformation" [ref=e50]
+              - heading "Transformation & Conseil" [level=3] [ref=e51]
+              - paragraph [ref=e52]: Faire évoluer les organisations, les pratiques et les cultures de travail, dans des contextes de transitions majeures.
+            - link [ref=e53] [cursor=pointer]:
+              - /url: /developpement-competences
+              - img "Développement des compétences" [ref=e55]
+              - heading "Développement des compétences" [level=3] [ref=e56]
+              - paragraph [ref=e57]: Développer et renforcer pratiques et postures, au plus près des réalités métier.
+            - link [ref=e58] [cursor=pointer]:
+              - /url: /coaching
+              - img "Coaching" [ref=e60]
+              - heading "Coaching" [level=3] [ref=e61]
+              - paragraph [ref=e62]: Révéler la puissance d'agir des individus, équipes et organisations pour réussir les transformations attendues.
+            - link [ref=e63] [cursor=pointer]:
+              - /url: /animation-communautes
+              - img "Animation de communautés" [ref=e65]
+              - heading "Animation de communautés" [level=3] [ref=e66]
+              - paragraph [ref=e67]: Faire vivre des dynamiques collectives, développer la transversalité et faire émerger des communautés engagées.
+        - generic [ref=e68]:
+          - generic:
+            - img "Étoile droite"
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - heading "... prolongées par des expériences digitales immersives" [level=2] [ref=e71]: ... prolongées pardes expériences digitales immersives
+              - paragraph [ref=e72]: Des solutions conçues pour enrichir les expériences, ancrer les apprentissages et accompagner dans la durée.
+            - generic [ref=e73]:
+              - link [ref=e74] [cursor=pointer]:
+                - /url: /my-scenaria
+                - img "My ScenarIA" [ref=e76]
+                - generic [ref=e77]:
+                  - paragraph [ref=e78]: S’entraîner dans des situations proches du réel
+                  - paragraph [ref=e79]: Interagir avec des avatars,tester ses postures et progresser grâceà des feedbacks personnalisés.
+                - generic [ref=e80]: Découvrir
+              - link [ref=e83] [cursor=pointer]:
+                - /url: /my-happy-learning
+                - img "My Happy Learning" [ref=e85]
+                - generic [ref=e86]:
+                  - paragraph [ref=e87]: Apprendre à son rythme, avec des parcours adaptés
+                  - paragraph [ref=e88]: Accéder à des contenus variés,progresser selon son niveau et suivresa montée en compétences.
+                - generic [ref=e89]: Découvrir
+              - generic [ref=e92]:
+                - img "My Happy Coaching" [ref=e94]
+                - generic [ref=e95]:
+                  - paragraph [ref=e96]: Passer à l'action et transformer durablement
+                  - paragraph [ref=e97]: Être accompagné.e pardes coachs expérimentés,accéder à des ressources ciblées etfaire évoluer durablement ses pratiques.
+                - generic [ref=e98]: Découvrir
+        - generic [ref=e103]:
+          - generic [ref=e105]:
+            - heading "Au service de vos enjeux de transformation" [level=2] [ref=e106]: Au service de vos enjeuxde transformation
+            - paragraph [ref=e107]: Des enjeux qui transforment en profondeur lespratiques et les cultures de travail, dans tous les secteurs d'activité.
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - heading "Vision & leadership" [level=3] [ref=e111]
+              - paragraph [ref=e113]: Se réinventer et faire évoluer sa vision pour répondre aux transformations en cours. (...)
+              - button "Lire plus" [ref=e115]
+            - generic [ref=e117]:
+              - heading "Excellence clients" [level=3] [ref=e119]
+              - paragraph [ref=e121]: Développer l'excellence opérationnelle et relationnelle au service de ses clients. (...)
+              - button "Lire plus" [ref=e123]
+            - generic [ref=e125]:
+              - heading "Culture managériale" [level=3] [ref=e127]
+              - paragraph [ref=e129]: Faire évoluer les pratiques managériales pour répondre aux nouvelles attentes, aux nouveaux usages et aux transformations du travail. (...)
+              - button "Lire plus" [ref=e131]
+            - generic [ref=e133]:
+              - heading "Softskills" [level=3] [ref=e135]
+              - paragraph [ref=e137]: "Développer la relation à soi : Réflexivité, intelligence émotionnelle, capacité à s'organiser, se mobiliser et se mettre en action. (...)"
+              - button "Lire plus" [ref=e139]
+            - generic [ref=e141]:
+              - heading "Équilibres relationnels & sociaux" [level=3] [ref=e143]: Équilibres relationnels &sociaux
+              - paragraph [ref=e145]: Cultiver des environnements de travail où le bien-être, la qualité des relations et le respect deviennent des repères durables. (...)
+              - button "Lire plus" [ref=e147]
+            - generic [ref=e149]:
+              - heading "Transition environnementale" [level=3] [ref=e151]
+              - paragraph [ref=e153]: Remettre le vivant et le bien commun au cœur de nos organisations. Redéfinir la valeur et repenser nos métiers au regard des enjeux environnementaux. (...)
+              - button "Lire plus" [ref=e155]
+            - generic [ref=e157]:
+              - heading "Organisation apprenante" [level=3] [ref=e159]
+              - paragraph [ref=e161]: Créer une académie interne, définir une signature pédagogique différenciante, et réenchanter l'expérience apprenante, au service d'apprentissages plus engageants et durables. (...)
+              - button "Lire plus" [ref=e163]
+            - generic [ref=e165]:
+              - heading "Ressources humaines" [level=3] [ref=e167]
+              - paragraph [ref=e169]: Accompagner les équipes RH dans leur propre transformation pour devenir de véritables partenaires d'affaires. (...)
+              - button "Lire plus" [ref=e171]
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - generic [ref=e176]:
+              - heading "Notre engagement pour un impact responsable" [level=2] [ref=e177]: Notre engagementpour un impact responsable
+              - generic [ref=e178]:
+                - img "Logo B Corp" [ref=e179]
+                - paragraph [ref=e180]: "Labellisé B Corp, Akor Consulting s'engage pour des transformations durables et responsables. Nous mesurons notre impact au regard de la triple performance : humaine, économique et environnementale."
+              - link "Découvrir notre impact" [ref=e181] [cursor=pointer]:
+                - /url: /notre-impact
+            - generic [ref=e184]:
+              - generic [ref=e185]:
+                - heading "+ de 150" [level=3] [ref=e186]
+                - generic [ref=e187]: formatrices, formateurs et coachs mobilisables au plus près de vos équipes
+              - generic [ref=e188]:
+                - heading "94,2%" [level=3] [ref=e189]
+                - generic [ref=e190]: de satisfaction apprenants*
+              - generic [ref=e191]:
+                - heading "~100" [level=3] [ref=e192]
+                - generic [ref=e193]: projets de transformation accompagnés chaque année
+              - generic [ref=e194]:
+                - heading "92%" [level=3] [ref=e195]
+                - generic [ref=e196]: des apprenantes, apprenants, coachées et coachés constatent des évolutions dans leurs pratiques
+          - generic [ref=e197]: "* évaluations à chaud 2025 - échantillon de 2 538 apprenants"
+        - generic [ref=e198]:
+          - generic:
+            - img "Étoile"
+          - generic [ref=e199]:
+            - heading "Prêt.e à transformer votre organisation ?" [level=2] [ref=e200]: Prêt.e à transformervotre organisation ?
+            - paragraph [ref=e201]: Échangeons sur vos enjeux et construisons ensemble votre projet de transformation
+            - link "Prenons contact" [ref=e202] [cursor=pointer]:
+              - /url: /contact
+    - contentinfo [ref=e205]:
+      - generic [ref=e206]:
+        - generic [ref=e207]:
+          - generic [ref=e208]:
+            - img "Akor Consulting" [ref=e209]
+            - paragraph [ref=e210]: Cabinet de conseil en transformation et développement des compétences
+            - generic [ref=e212]:
+              - link [ref=e213] [cursor=pointer]:
+                - /url: https://cdn.prod.website-files.com/6380b0e99edf5186e0e3a9b2/698c53a8d0dce3a74bb0649e_Qualiopi.pdf
+                - img "Qualiopi" [ref=e214]
+              - img "Logo B Corp" [ref=e215]
+          - generic [ref=e216]:
+            - heading "Nos services" [level=3] [ref=e217]
+            - list [ref=e218]:
+              - listitem [ref=e219]:
+                - link "Transformation & Conseil" [ref=e220] [cursor=pointer]:
+                  - /url: /conseil-transformation
+              - listitem [ref=e221]:
+                - link "Développement des compétences" [ref=e222] [cursor=pointer]:
+                  - /url: /developpement-competences
+              - listitem [ref=e223]:
+                - link "Coaching individuel, collectif et d'organisation" [ref=e224] [cursor=pointer]:
+                  - /url: /coaching
+              - listitem [ref=e225]:
+                - link "Animation de communautés" [ref=e226] [cursor=pointer]:
+                  - /url: /animation-communautes
+              - listitem [ref=e227]:
+                - link "Solutions digitales" [ref=e228] [cursor=pointer]:
+                  - /url: /solutions-innovantes
+          - generic [ref=e229]:
+            - heading "Akor Consulting" [level=3] [ref=e230]
+            - list [ref=e231]:
+              - listitem [ref=e232]:
+                - link "À propos" [ref=e233] [cursor=pointer]:
+                  - /url: /a-propos
+              - listitem [ref=e234]:
+                - link "Notre impact" [ref=e235] [cursor=pointer]:
+                  - /url: /notre-impact
+              - listitem [ref=e236]:
+                - link "Contact" [ref=e237] [cursor=pointer]:
+                  - /url: /contact
+          - generic [ref=e238]:
+            - heading "Contact" [level=3] [ref=e239]
+            - list [ref=e240]:
+              - listitem [ref=e241]:
+                - generic [ref=e244]: +33 146 09 13 07
+              - listitem [ref=e245]:
+                - link "contact@akorconsulting.com" [ref=e249] [cursor=pointer]:
+                  - /url: mailto:contact@akorconsulting.com
+              - listitem [ref=e250]:
+                - generic [ref=e254]: Boulogne-Billancourt, France
+              - listitem [ref=e255]:
+                - link "Référent handicap" [ref=e258] [cursor=pointer]:
+                  - /url: /contact/accessibilite-inclusion
+            - link [ref=e260] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/1534159/admin/dashboard/
+        - generic [ref=e265]:
+          - generic [ref=e266]:
+            - link "Mentions légales" [ref=e267] [cursor=pointer]:
+              - /url: /mentions-legales
+            - generic [ref=e268]: "|"
+            - link "Politique de confidentialité (RGPD)" [ref=e269] [cursor=pointer]:
+              - /url: /politique-confidentialite
+          - paragraph [ref=e270]: © 2026 Akor Consulting. Tous droits réservés.
+    - link "Prenons contact" [ref=e271] [cursor=pointer]:
+      - /url: /contact

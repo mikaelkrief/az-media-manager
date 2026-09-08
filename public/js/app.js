@@ -4,6 +4,7 @@ class MediaManager {
         this.videosDataTable = null;
         this.currentFile = null;
         this.currentVideo = null;
+        this.selectedVideoFile = null; // Fichier MP4 sélectionné pour upload
         this.authToken = null; // Token Easy Auth (Entra ID) mis en cache
         this.playerBaseUrl = null; // URL du player statique
         this.init();
@@ -535,6 +536,8 @@ class MediaManager {
                             // Afficher l'icône selon la plateforme
                             const icon = row.platformType === 'vimeo' 
                                 ? '<i class="fab fa-vimeo-v text-primary me-2"></i>'
+                                : row.platformType === 'upload'
+                                ? '<i class="fas fa-file-video text-secondary me-2"></i>'
                                 : '<i class="fab fa-youtube text-danger me-2"></i>';
                             return icon + data;
                         }
@@ -543,10 +546,12 @@ class MediaManager {
                         data: 'videoId',
                         title: 'Video ID',
                         render: function(data, type, row) {
-                            if (type === 'export') return (row.platformType || 'youtube').toUpperCase() + ': ' + (data || row.youtubeId);
                             const platform = (row.platformType || 'youtube').toUpperCase();
                             const id = data || row.youtubeId;
-                            return '<span class="badge bg-secondary me-1">' + platform + '</span><code>' + id + '</code>';
+                            // Pour un fichier upload, n'afficher que le nom du fichier (sans le dossier)
+                            const displayId = row.platformType === 'upload' ? (id || '').split('/').pop() : id;
+                            if (type === 'export') return platform + ': ' + displayId;
+                            return '<span class="badge bg-secondary me-1">' + platform + '</span><code>' + displayId + '</code>';
                         }
                     },
                     { 
@@ -667,8 +672,21 @@ class MediaManager {
                 // Clear and hide preview when switching platforms
                 document.getElementById('videoPreview').classList.add('d-none');
                 document.getElementById('videoPreviewFrame').src = '';
+                document.getElementById('videoPreviewVideo').src = '';
             });
         });
+
+        // MP4 file selection preview
+        const videoFileInput = document.getElementById('videoFileInput');
+        if (videoFileInput) {
+            videoFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                this.selectedVideoFile = file || null;
+                if (file) {
+                    this.previewUploadedFile(file);
+                }
+            });
+        }
 
         // YouTube/Vimeo ID/URL preview avec auto-fill
         const videoIdInput = document.getElementById('videoIdInput');
@@ -756,27 +774,63 @@ class MediaManager {
         const platformLabel = document.getElementById('platformLabel');
         const platformHelp = document.getElementById('platformHelp');
         const videoIdInput = document.getElementById('videoIdInput');
+        const videoFileInput = document.getElementById('videoFileInput');
+        const urlInputGroup = document.getElementById('urlInputGroup');
+        const fileInputGroup = document.getElementById('fileInputGroup');
         const modalIcon = document.getElementById('videoModalIcon');
         const previewIcon = document.getElementById('previewIcon');
         
         if (platformType === 'vimeo') {
+            urlInputGroup.classList.remove('d-none');
+            fileInputGroup.classList.add('d-none');
+            videoIdInput.required = true;
+            videoFileInput.required = false;
             platformLabel.textContent = 'Vimeo';
             platformHelp.textContent = "L'ID ou l'URL complète Vimeo";
             videoIdInput.placeholder = 'Ex: 123456789 ou https://vimeo.com/...';
             modalIcon.className = 'fab fa-vimeo-v text-primary me-2';
             previewIcon.className = 'fab fa-vimeo-v me-2';
         } else if (platformType === 'youtube') {
+            urlInputGroup.classList.remove('d-none');
+            fileInputGroup.classList.add('d-none');
+            videoIdInput.required = true;
+            videoFileInput.required = false;
             platformLabel.textContent = 'YouTube';
             platformHelp.textContent = "L'ID ou l'URL complète YouTube";
             videoIdInput.placeholder = 'Ex: dQw4w9WgXcQ ou https://youtube.com/watch?v=...';
             modalIcon.className = 'fab fa-youtube text-danger me-2';
             previewIcon.className = 'fab fa-youtube me-2';
+        } else if (platformType === 'upload') {
+            urlInputGroup.classList.add('d-none');
+            fileInputGroup.classList.remove('d-none');
+            videoIdInput.required = false;
+            // Le fichier n'est requis qu'à la création (pas en édition)
+            videoFileInput.required = !document.getElementById('videoId').value;
+            modalIcon.className = 'fas fa-file-video text-secondary me-2';
+            previewIcon.className = 'fas fa-file-video me-2';
         }
+    }
+
+    previewUploadedFile(file) {
+        const preview = document.getElementById('videoPreview');
+        const frame = document.getElementById('videoPreviewFrame');
+        const video = document.getElementById('videoPreviewVideo');
+
+        frame.classList.add('d-none');
+        frame.src = '';
+        video.classList.remove('d-none');
+        video.src = URL.createObjectURL(file);
+        preview.classList.remove('d-none');
     }
 
     previewVideo(videoId, platformType) {
         const preview = document.getElementById('videoPreview');
         const frame = document.getElementById('videoPreviewFrame');
+        const video = document.getElementById('videoPreviewVideo');
+
+        video.classList.add('d-none');
+        video.src = '';
+        frame.classList.remove('d-none');
         
         if (videoId && ((platformType === 'youtube' && videoId.length >= 11) || (platformType === 'vimeo' && videoId.length > 0))) {
             // Configuration complète de l'iframe
@@ -905,18 +959,32 @@ class MediaManager {
     }
 
     async saveVideo() {
-        const form = document.getElementById('videoForm');
         const videoId = document.getElementById('videoId').value;
         const isEdit = !!videoId;
 
         // Get platform type
         const platformType = document.querySelector('input[name="platformType"]:checked').value;
-        
-        // Validation
-        let videoIdInput = document.getElementById('videoIdInput').value.trim();
         const title = document.getElementById('videoTitle').value.trim();
+        const description = document.getElementById('videoDescription').value.trim();
+        const tags = document.getElementById('videoTags').value
+            .split(',')
+            .map(t => t.trim())
+            .filter(t => t.length > 0);
+        const isPublished = document.getElementById('videoPublished').checked;
 
-        if (!videoIdInput || !title) {
+        if (!title) {
+            this.showAlert('Le titre est obligatoire', 'warning');
+            return;
+        }
+
+        if (platformType === 'upload') {
+            await this.saveUploadedVideo(videoId, isEdit, { title, description, tags, isPublished });
+            return;
+        }
+
+        // Validation pour YouTube/Vimeo
+        let videoIdInput = document.getElementById('videoIdInput').value.trim();
+        if (!videoIdInput) {
             this.showAlert('ID/URL de la vidéo et titre sont obligatoires', 'warning');
             return;
         }
@@ -937,12 +1005,9 @@ class MediaManager {
             videoId: extractedVideoId,
             youtubeId: platformType === 'youtube' ? extractedVideoId : undefined,  // Rétrocompatibilité
             title: title,
-            description: document.getElementById('videoDescription').value.trim(),
-            tags: document.getElementById('videoTags').value
-                .split(',')
-                .map(t => t.trim())
-                .filter(t => t.length > 0),
-            isPublished: document.getElementById('videoPublished').checked
+            description: description,
+            tags: tags,
+            isPublished: isPublished
         };
 
         const saveBtn = document.getElementById('saveVideoBtn');
@@ -989,6 +1054,67 @@ class MediaManager {
         }
     }
 
+    /**
+     * Enregistre une vidéo de type 'upload' (fichier MP4 dans le blob storage)
+     */
+    async saveUploadedVideo(videoId, isEdit, { title, description, tags, isPublished }) {
+        if (!isEdit && !this.selectedVideoFile) {
+            this.showAlert('Un fichier MP4 est obligatoire', 'warning');
+            return;
+        }
+
+        const saveBtn = document.getElementById('saveVideoBtn');
+        const originalText = saveBtn.innerHTML;
+
+        try {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...';
+
+            let response;
+            if (isEdit) {
+                // En édition, seul le titre/description/tags/statut sont modifiables (pas le fichier)
+                response = await fetch(`/api/youtube-videos/${videoId}`, await this.addAuth({
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, tags, isPublished })
+                }));
+            } else {
+                const formData = new FormData();
+                formData.append('file', this.selectedVideoFile);
+                formData.append('title', title);
+                formData.append('description', description);
+                formData.append('tags', tags.join(','));
+                formData.append('isPublished', isPublished);
+
+                response = await fetch('/api/youtube-videos/upload', await this.addAuth({
+                    method: 'POST',
+                    body: formData
+                }));
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showAlert(
+                    isEdit ? 'Vidéo mise à jour avec succès !' : 'Vidéo uploadée avec succès !',
+                    'success'
+                );
+                this.loadVideos();
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('videoModal'));
+                if (modal) modal.hide();
+            } else {
+                throw new Error(result.error || 'Erreur lors de l\'enregistrement');
+            }
+        } catch (error) {
+            console.error('Save uploaded video error:', error);
+            this.showAlert(`Erreur : ${error.message}`, 'danger');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+    }
+
     editVideo(id) {
         fetch(`/api/youtube-videos/${id}`, { method: 'GET' })
             .then(res => res.json())
@@ -1001,11 +1127,10 @@ class MediaManager {
                     
                     // Set platform type
                     const platformType = video.platformType || 'youtube';
-                    document.getElementById(platformType === 'youtube' ? 'platformYoutube' : 'platformVimeo').checked = true;
+                    const radioIds = { youtube: 'platformYoutube', vimeo: 'platformVimeo', upload: 'platformUpload' };
+                    document.getElementById(radioIds[platformType]).checked = true;
                     this.updatePlatformUI(platformType);
                     
-                    // Set video ID
-                    document.getElementById('videoIdInput').value = video.videoId || video.youtubeId;
                     document.getElementById('videoTitle').value = video.title;
                     document.getElementById('videoDescription').value = video.description || '';
                     document.getElementById('videoTags').value = video.tags ? video.tags.join(', ') : '';
@@ -1014,8 +1139,22 @@ class MediaManager {
                     // Update modal title
                     document.getElementById('videoModalTitle').textContent = 'Modifier la vidéo';
                     
-                    // Show preview
-                    this.previewVideo(video.videoId || video.youtubeId, platformType);
+                    if (platformType === 'upload') {
+                        // Fichier non modifiable : afficher l'aperçu depuis l'URL du blob
+                        const preview = document.getElementById('videoPreview');
+                        const frame = document.getElementById('videoPreviewFrame');
+                        const previewVideoEl = document.getElementById('videoPreviewVideo');
+                        frame.classList.add('d-none');
+                        frame.src = '';
+                        previewVideoEl.classList.remove('d-none');
+                        previewVideoEl.src = video.fileUrl || '';
+                        preview.classList.remove('d-none');
+                    } else {
+                        // Set video ID
+                        document.getElementById('videoIdInput').value = video.videoId || video.youtubeId;
+                        // Show preview
+                        this.previewVideo(video.videoId || video.youtubeId, platformType);
+                    }
                     
                     // Show modal
                     const modal = new bootstrap.Modal(document.getElementById('videoModal'));
@@ -1041,6 +1180,7 @@ class MediaManager {
                 // Set video details avec iframe complète
                 // IMPORTANT: Définir tous les attributs AVANT le src
                 const frame = document.getElementById('videoDetailsFrame');
+                const detailsVideoEl = document.getElementById('videoDetailsVideo');
                 frame.width = '560';
                 frame.height = '315';
                 frame.frameBorder = '0';
@@ -1052,10 +1192,20 @@ class MediaManager {
                 const platformType = video.platformType || 'youtube';
                 const videoId = video.videoId || video.youtubeId;
                 
-                if (platformType === 'youtube') {
-                    frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
-                } else if (platformType === 'vimeo') {
-                    frame.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+                if (platformType === 'upload') {
+                    frame.classList.add('d-none');
+                    frame.src = '';
+                    detailsVideoEl.classList.remove('d-none');
+                    detailsVideoEl.src = video.fileUrl || '';
+                } else {
+                    detailsVideoEl.classList.add('d-none');
+                    detailsVideoEl.src = '';
+                    frame.classList.remove('d-none');
+                    if (platformType === 'youtube') {
+                        frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+                    } else if (platformType === 'vimeo') {
+                        frame.src = `https://player.vimeo.com/video/${videoId}?dnt=1`;
+                    }
                 }
                 
                 document.getElementById('videoDetailsTitle').textContent = video.title;
@@ -1178,11 +1328,14 @@ class MediaManager {
     resetVideoForm() {
         document.getElementById('videoForm').reset();
         document.getElementById('videoId').value = '';
+        document.getElementById('videoFileInput').value = '';
+        this.selectedVideoFile = null;
         document.getElementById('videoModalTitle').textContent = 'Ajouter une vidéo';
         document.getElementById('platformVimeo').checked = true;
         this.updatePlatformUI('vimeo');
         document.getElementById('videoPreview').classList.add('d-none');
         document.getElementById('videoPreviewFrame').src = '';
+        document.getElementById('videoPreviewVideo').src = '';
     }
 }
 

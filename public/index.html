@@ -188,6 +188,11 @@
                                         <label class="btn btn-outline-danger btn-sm" for="filterYoutube">
                                             <i class="fab fa-youtube me-1"></i>YouTube
                                         </label>
+
+                                        <input type="radio" class="btn-check" name="platformFilter" id="filterUpload" value="upload" autocomplete="off">
+                                        <label class="btn btn-outline-secondary btn-sm" for="filterUpload">
+                                            <i class="fas fa-file-video me-1"></i>Fichier
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -324,18 +329,31 @@
                                     <label class="btn btn-outline-danger" for="platformYoutube">
                                         <i class="fab fa-youtube me-2"></i>YouTube
                                     </label>
+
+                                    <input type="radio" class="btn-check" name="platformType" id="platformUpload" value="upload">
+                                    <label class="btn btn-outline-secondary" for="platformUpload">
+                                        <i class="fas fa-file-video me-2"></i>Fichier MP4
+                                    </label>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="urlInputGroup">
                                 <label for="videoIdInput" class="form-label">
                                     <span id="platformLabel">YouTube</span> ID ou URL <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control" id="videoIdInput" name="videoIdInput" required 
                                        placeholder="Ex: dQw4w9WgXcQ">
                                 <div class="form-text" id="platformHelp">L'ID ou l'URL complète</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3 d-none" id="fileInputGroup">
+                                <label for="videoFileInput" class="form-label">
+                                    Fichier MP4 <span class="text-danger">*</span>
+                                </label>
+                                <input type="file" class="form-control" id="videoFileInput" name="videoFile" accept="video/mp4,.mp4">
+                                <div class="form-text">Taille maximale : 1GB. Non modifiable après création.</div>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -376,6 +394,7 @@
                                 <strong><i id="previewIcon" class="fab fa-youtube me-2"></i>Aperçu:</strong>
                                 <div class="ratio ratio-16x9 mt-2">
                                     <iframe id="videoPreviewFrame" src="" frameborder="0" allowfullscreen></iframe>
+                                    <video id="videoPreviewVideo" class="d-none" controls></video>
                                 </div>
                             </div>
                         </div>
@@ -406,6 +425,7 @@
                 <div class="modal-body">
                     <div class="ratio ratio-16x9 mb-3">
                         <iframe id="videoDetailsFrame" src="" frameborder="0" allowfullscreen></iframe>
+                        <video id="videoDetailsVideo" class="d-none" controls></video>
                     </div>
                     <h5 id="videoDetailsTitle"></h5>
                     <p class="text-muted" id="videoDetailsYoutubeId"></p>

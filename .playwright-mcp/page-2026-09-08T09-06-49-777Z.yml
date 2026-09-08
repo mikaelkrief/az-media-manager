@@ -1,0 +1,34 @@
+- generic [active] [ref=e1]:
+  - region [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - img "logo" [ref=e7]
+        - link "Cookiebot par Usercentrics - ouvre dans un nouvel onglet" [ref=e8] [cursor=pointer]:
+          - /url: https://www.cookiebot.com/fr/powered-by-cookiebot-c-est-quoi-au-juste/?utm_source=banner_cb&utm_medium=referral&utm_content=v2
+      - tabpanel "Consentement" [ref=e36]:
+        - generic [ref=e38]:
+          - heading "Ce site web utilise des cookies." [level=2] [ref=e39]
+          - generic [ref=e40]: Les cookies nous permettent de personnaliser le contenu et les annonces, d'offrir des fonctionnalités relatives aux médias sociaux et d'analyser notre trafic. Nous partageons également des informations sur l'utilisation de notre site avec nos partenaires de médias sociaux, de publicité et d'analyse, qui peuvent combiner celles-ci avec d'autres informations que vous leur avez fournies ou qu'ils ont collectées lors de votre utilisation de leurs services.
+        - generic [ref=e41]:
+          - group "Sélection du consentement" [ref=e47]:
+            - generic [ref=e49]:
+              - generic [ref=e50]:
+                - strong [ref=e52]: Nécessaires
+                - generic [ref=e53]:
+                  - checkbox "Nécessaires" [checked] [disabled]
+              - generic [ref=e54]:
+                - strong [ref=e56] [cursor=pointer]: Préférences
+                - switch "Préférences" [ref=e58] [cursor=pointer]
+              - generic [ref=e59]:
+                - strong [ref=e61] [cursor=pointer]: Statistiques
+                - switch "Statistiques" [ref=e63] [cursor=pointer]
+              - generic [ref=e64]:
+                - strong [ref=e66] [cursor=pointer]: Marketing
+                - switch "Marketing" [ref=e68] [cursor=pointer]
+          - link "Afficher les détails" [ref=e70] [cursor=pointer]:
+            - /url: "#"
+      - generic [ref=e74]:
+        - button "Refuser" [ref=e75] [cursor=pointer]
+        - button "Autoriser la sélection" [ref=e76] [cursor=pointer]
+        - button "Tout autoriser" [ref=e77] [cursor=pointer]
+  - iframe [aria-hidden] [ref=e78]

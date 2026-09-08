@@ -110,8 +110,9 @@ class AzureBlobService {
     return this.containerClient;
   }
 
-  getBlobPath(fileName) {
-    return this.uploadFolder ? `${this.uploadFolder}/${fileName}` : fileName;
+  getBlobPath(fileName, folder) {
+    const targetFolder = folder !== undefined ? folder : this.uploadFolder;
+    return targetFolder ? `${targetFolder}/${fileName}` : fileName;
   }
 
   async listBlobs() {
@@ -188,17 +189,17 @@ class AzureBlobService {
     }
   }
 
-  async uploadBlob(fileName, buffer, mimeType) {
+  async uploadBlob(fileName, buffer, mimeType, folder) {
     this.ensureInitialized();
     try {
       console.log('=== DIAGNOSTIC UPLOAD ===');
       console.log('Nom du fichier:', fileName);
       console.log('Taille du buffer:', buffer.length);
       console.log('Type MIME:', mimeType);
-      console.log('Upload folder configuré:', this.uploadFolder);
+      console.log('Upload folder configuré:', folder !== undefined ? folder : this.uploadFolder);
       
       const containerClient = this.getContainerClient();
-      const blobName = this.getBlobPath(fileName);
+      const blobName = this.getBlobPath(fileName, folder);
       console.log('Chemin complet du blob:', blobName);
       console.log('URL du container:', containerClient.url);
       

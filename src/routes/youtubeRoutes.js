@@ -1,8 +1,26 @@
 const express = require('express');
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
 const youtubeService = require('../youtubeService');
+const azureBlobService = require('../azureBlobService');
 const fetch = require('node-fetch');
 
 const router = express.Router();
+
+// Configure multer for MP4 video uploads (stored in memory then streamed to Azure Blob Storage)
+const videoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 1024 * 1024 * 1024 // 1GB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'video/mp4') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only MP4 files are allowed'), false);
+    }
+  }
+});
 
 // GET /api/youtube-videos/info/:youtubeId - Get video info from YouTube Data API v3
 router.get('/info/:youtubeId', async (req, res) => {
@@ -54,6 +72,60 @@ router.get('/info/:youtubeId', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Could not fetch video information'
+    });
+  }
+});
+
+// POST /api/youtube-videos/upload - Upload an MP4 file to Blob Storage and register it in the catalog
+router.post('/upload', videoUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded'
+      });
+    }
+
+    const { title, description, isPublished } = req.body;
+
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        error: 'title is required'
+      });
+    }
+
+    const tags = req.body.tags
+      ? (Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',').map(t => t.trim()).filter(t => t.length > 0))
+      : [];
+
+    const { originalname, buffer, mimetype } = req.file;
+    const videoFolder = process.env.AZURE_VIDEO_UPLOAD_FOLDER || 'video';
+    // Prefix with a unique id to avoid collisions with existing blobs/catalog entries
+    const blobFileName = `${uuidv4()}-${originalname}`;
+
+    const uploadResult = await azureBlobService.uploadBlob(blobFileName, buffer, mimetype, videoFolder);
+
+    const newVideo = await youtubeService.createVideo({
+      platformType: 'upload',
+      videoId: uploadResult.name,
+      fileUrl: uploadResult.url,
+      title,
+      description: description || '',
+      tags,
+      isPublished: isPublished === 'true' || isPublished === true
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Vidéo uploadée avec succès',
+      video: newVideo
+    });
+  } catch (error) {
+    console.error('Error in POST /api/youtube-videos/upload:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 });
@@ -276,6 +348,27 @@ router.delete('/:id', async (req, res) => {
       error: error.message
     });
   }
+});
+
+// Error handling middleware for multer (MP4 upload)
+router.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        error: 'File too large. Maximum size is 1GB.'
+      });
+    }
+  }
+
+  if (error.message === 'Only MP4 files are allowed') {
+    return res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+
+  next(error);
 });
 
 module.exports = router;
